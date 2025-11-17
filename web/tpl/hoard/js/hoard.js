@@ -47,7 +47,7 @@ var hoard =  {
 				self.get_row_data({
 					section_id : options.section_id
 				})
-				.then(function(ar_rows){
+				.then(async function(ar_rows){
 					console.log("[set_up->get_row_data] ar_rows:",ar_rows);
 
 					if (ar_rows && ar_rows.length>0) {
@@ -56,7 +56,7 @@ var hoard =  {
 							self.row = ar_rows[0]
 
 						// row render
-							const hoard_node = render_hoard.draw_hoard({
+							const hoard_node =await render_hoard.draw_hoard({
 								row : self.row
 							})
 							const container = self.row_detail_container
@@ -66,13 +66,7 @@ var hoard =  {
 								}
 							container.appendChild(hoard_node)
 
-						// map draw. Init default map
-							render_hoard.draw_map({
-								map_data	: self.row.map,
-								container	: document.getElementById("map_container"),
-								self		: self
-							})
-
+		
 						// types
 							const rows_container = document.getElementById('rows_container')
 							self.get_types_data(self.row, rows_container)
@@ -164,12 +158,7 @@ var hoard =  {
 				? 'numisdata5_'   + row.section_id // hoards
 				: 'numisdata279_' + row.section_id // findspots
 
-		// spinner
-			const spinner = common.create_dom_element({
-				element_type	: "div",
-				class_name		: "spinner",
-				parent			: rows_container
-			})
+		
 
 		const selected_element = {
 			term_id				: term_id //"numisdata5_94",
@@ -189,39 +178,6 @@ var hoard =  {
 			coins_list : row.coins, // ['92797', '92842', '92850', '92893', '138826'],
 			types_list : row.types // ['1963', '4682', '15868', '1966', '4685', '15872', '1967', '4686', '15873', '2083', '4802']
 		}
-
-		map.load_map_selection_info(selected_element, global_data_item)
-		.then(function(response) {
-			// console.log("--> load_map_selection_info response:",response);
-
-			spinner.remove()
-
-			if (response) {
-
-				// set node only when it is in DOM (to save browser resources)
-				// const observer = new IntersectionObserver(function(entries) {
-				// 	const entry = entries[1] || entries[0]
-				// 	if (entry.isIntersecting===true || entry.intersectionRatio > 0) {
-				// 		observer.disconnect();
-
-					// render data
-						const types_list_node = render_hoard.draw_types_list_node({
-							response : response
-						})
-						rows_container.appendChild(types_list_node)
-
-				// 	}
-				// }, { threshold: [0] });
-				// observer.observe(rows_container);
-
-				// activate images lightbox
-					setTimeout(function(){
-						const images_gallery_containers = rows_container
-						page.activate_images_gallery(images_gallery_containers, true)
-					},600)
-			}
-		})
-
 
 
 		return true

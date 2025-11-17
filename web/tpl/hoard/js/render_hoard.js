@@ -14,17 +14,20 @@ var render_hoard = {
 	* DRAW_HOARD
 	* Render main row data (tile, body, bibliography, et.)
 	*/
-	draw_hoard : function(options) {
+	draw_hoard : async function(options) {
 
 		// options
 			const row = options.row
-
+			console.log("draw_hoard options:", row);
 		// check row
 			if (!row) {
 				console.warn("Warning! draw_row row no found in options");
 				return fragment;
 			}
 
+			const coins =  await this.cargarMonedasHallazgos(row.coins);
+
+				console.log("MONEDAS ",coins);
 		const fragment = new DocumentFragment();
 
 		// line
@@ -44,6 +47,8 @@ var render_hoard = {
 				})
 				link.setAttribute('target', '_blank');
 			}
+
+			console.log("ROW ",row);
 
 		// name & place
 			if (row.name && row.name.length>0) {
@@ -149,61 +154,195 @@ var render_hoard = {
 				})
 			}
 
+		// map
+			const map_container = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "map_container",
+				parent			: fragment
+			})
 
+			const map_fact = new map_factory() // creates / get existing instance of map
+
+						let resultado = {
+						hallazgos: {
+							datos: []
+						},
+						cecas: {
+							datos: []
+						},
+						complejos: {
+							datos: []
+						}
+						};
+					const mints = await this.get_mint_points(row.types);
+					resultado.cecas.datos = mints.result;
+					resultado.hallazgos.datos.push(row)
+					
+						const map = map_fact.init({
+							map_container : map_container,
+							map_position  : row.map,
+							source_maps   : page.maps_config.source_maps,
+							result        : resultado,
+							findspot	  : true,
+							unique    	  : true
+							});
+
+				const title_coin = common.create_dom_element({
+						element_type	: "h2",
+						class_name 		: "title_info",
+						text_content	: "Monedas Encontradas",
+						parent 			: fragment
+					})
+
+					common.create_dom_element({
+						element_type	: "div",
+						class_name 		: "golden-separator",
+						parent 			: title_coin
+					})
+
+
+					for (let index = 0; index < coins.result.length; index++) {
+							
+							
+						// Card Container
+						const coinsContainer = common.create_dom_element({
+							element_type: "div",
+							class_name: "coins-container",
+							parent: fragment
+						});
+
+						// Coin Title
+							const title_container = common.create_dom_element({
+								element_type: "div",
+								class_name: "title-container",
+								parent: coinsContainer
+							});
+
+							const typeValue = coins.result[index] && coins.result[index].type_full_value ? coins.result[index].type_full_value : "";
+
+							const parts = typeValue ? typeValue.split("|") : [];
+							const lastPart = parts.length > 0 ? parts[parts.length - 1].trim() : "";
+
+							const type_full_val = coins.result[index].denomination ? coins.result[index].denomination + " | " + lastPart.replace(coins.result[index].denomination, "").trim(): coins.result[index].type_full_value;
+							const type_none = type_full_val ? type_full_val : "Tipo";
+
+							let value = coins.result[index].type_data ? coins.result[index].type_data.replace('"',"").replace("[","").replace("]","").replace('"','') : 0;
+							let coin_type = value
+							
+							common.create_dom_element({
+								element_type: "a",
+								class_name: "type_link",
+								href: `/web_numisdata/type/${coin_type}`,
+								text_content: type_none, 
+								parent: title_container
+							});
+
+						// Contenedor global datos 
+
+						const data_container = common.create_dom_element({
+							element_type: "div",
+							class_name: "data-container",
+							parent: coinsContainer
+						});
+
+						const imgContainer = common.create_dom_element({
+							element_type: "div",
+							class_name: "img-container",
+							parent: data_container
+						});
+
+							const image_obverse = "https://wondercoins.uca.es" + coins.result[index].image_obverse;
+							const image_reverse = "https://wondercoins.uca.es" + coins.result[index].image_reverse;
+
+							common.create_dom_element({
+								element_type: "img",
+								class_name: "img_obverse",
+								parent: imgContainer,
+								src: image_obverse
+							});
+
+							common.create_dom_element({
+								element_type: "img",
+								class_name: "img_obverse",
+								parent: imgContainer,
+								src: image_reverse
+							});
+
+							//informacion
+							const info_container = common.create_dom_element({
+								element_type: "div",
+								class_name: "info-container",
+								parent: data_container
+							});
+
+							//Date 
+
+							const dateInRaw = coins.result[index].date_in;
+								const dateOutRaw = coins.result[index].date_out;
+
+								const hasDateIn = !!dateInRaw;
+								const hasDateOut = !!dateOutRaw;
+
+								const dateIn = hasDateIn ? (dateInRaw.includes('-') ? Math.abs(parseInt(dateInRaw)) + " A.C." : dateInRaw + " D.C.") : "N/A";
+								const dateOut = hasDateOut ? (dateOutRaw.includes('-') ? Math.abs(parseInt(dateOutRaw)) + " A.C." : dateOutRaw + " D.C.") : "N/A";
+
+								const dateText = !hasDateIn && !hasDateOut
+								? "N/A - N/A"
+								: dateIn + " - " + dateOut;
+
+							common.create_dom_element({
+								element_type: "p",
+								class_name: "date_text",
+								text_content: dateText,
+								parent: info_container
+							});
+
+							const weightText = coins.result[index].weight ? coins.result[index].weight + " gramos" : "N/A";
+
+							common.create_dom_element({
+								element_type: "p",
+								class_name: "weight_text",
+								text_content: weightText,
+								parent: info_container
+							});
+
+							const diameterText = coins.result[index].diameter ? coins.result[index].diameter + " mm" : "N/A";
+
+							common.create_dom_element({
+								element_type: "p",
+								class_name: "diameter_text",
+								text_content: diameterText,
+								parent: info_container
+							});
+
+							const collectionText = coins.result[index].collection ? coins.result[index].collection : "N/A";
+
+							common.create_dom_element({
+								element_type: "p",
+								class_name: "collection_text",
+								text_content: collectionText,
+								parent: info_container
+							});
+
+							//Findspot
+
+							const findspot_container = common.create_dom_element({
+								element_type: "div",
+								class_name: "findspot_container",
+								parent: coinsContainer
+							});
+
+							common.create_dom_element({
+								element_type: "p",
+								class_name: "findspot_text",
+								text_content: coins.result[index].findspot.split(" | ")[0],
+								parent: findspot_container
+							});
+							
+						}
+						
 		return fragment
 	},//end draw_hoard
-
-
-
-	/**
-	* DRAW_MAP
-	*/
-	draw_map : function(options) {
-
-		// options
-			const map_data	= options.map_data
-			const container	= options.container
-			const self		= options.self // caller
-
-		// short vars
-			const map_position	= map_data
-			const row			= self.row
-
-		self.map = self.map || new map_factory() // creates / get existing instance of map
-		self.map.init({
-			map_container	: container,
-			map_position	: map_position,
-			popup_builder	: page.map_popup_builder,
-			popup_options	: page.maps_config.popup_options,
-			source_maps		: page.maps_config.source_maps,
-			legend			: page.render_map_legend
-		})
-		// draw points
-		// const map_data_clean = self.map_data(map_data) // prepares data to used in map
-		let map_data_clean
-		if (row.georef_geojson) {
-			// from geojson
-			const popup_data = {
-				section_id	: row.section_id,
-				title		: row.name,
-				description	: row.public_info.trim(),
-				type		: row.table==='findspots'
-					? 'findspot'
-					: 'hoard'
-			}
-			map_data_clean = hoards.map_data_geojson(row.georef_geojson, popup_data)
-		}else{
-			// from single map point
-			map_data_clean = hoards.map_data_point(row.map, row.name)
-		}
-		self.map.parse_data_to_map(map_data_clean, null)
-		.then(function(){
-			container.classList.remove("hide_opacity")
-		})
-
-
-		return true
-	},//end draw_map
 
 
 
@@ -228,145 +367,88 @@ var render_hoard = {
 	},//end draw_types_list_node
 
 
+	/*cargarMonedasHallazgos : async function(ceca) {
+		try {
+			const monedas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'coins',
+					ar_fields: ["*"],
+					sql_filter: `findspot LIKE '%${ceca}%'`,
+					limit: 15,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
+				}
+			});
+			return monedas;
 
-	/**
-	* DRAW_HOARD_OLD
-	*/
-		// draw_hoard_OLD : function(row) {
+		} catch (error) {
+			console.error("Error cargando datos:", error);
+		}
+	},*/
 
+	cargarMonedasHallazgos : async function(ids) {
+		try {
+    // si ids es un array -> conviértelo en lista separada por comas
+			const filtro = Array.isArray(ids)
+			? `section_id IN (${ids.join(",")})`
+			: `section_id = ${ids}`;
 
-		// 	const fragment = new DocumentFragment();
-		// 	if (!row) {
-		// 		return fragment
-		// 	}
+			const monedas = await data_manager.request({
+			body: {
+				dedalo_get: "records",
+				table: "coins",
+				ar_fields: ["*"],
+				sql_filter: filtro,
+				limit: 0,
+				count: true,
+				offset: 0,
+				order: "section_id ASC",
+				process_result: null,
+			},
+			});
 
-		// 	// line
-		// 		const line = common.create_dom_element({
-		// 			element_type	: "div",
-		// 			class_name		: "",
-		// 			parent			: fragment
-		// 		})
+			return monedas;
+		} catch (error) {
+			console.error("Error cargando datos:", error);
+		}
+},
 
+	get_mint_points : async function(types) {
+		
+		let sql_filter = "";
 
-		// 	// section_id (dedalo users only)
-		// 		if (dedalo_logged===true) {
-
-		// 			const link = common.create_dom_element({
-		// 				element_type	: "a",
-		// 				class_name		: "section_id go_to_dedalo",
-		// 				inner_html		: row.section_id,
-		// 				href			: '/dedalo/lib/dedalo/main/?t=numisdata5&id=' + row.section_id,
-		// 				parent			: line
-		// 			})
-		// 			link.setAttribute('target', '_blank');
-		// 		}
-
-		// 	// name
-		// 		if (row.name && row.name.length>0) {
-
-		// 			common.create_dom_element({
-		// 				element_type	: "label",
-		// 				class_name		: "",
-		// 				inner_html		: tstring.name || "Name",
-		// 				parent			: line
-		// 			})
-
-		// 			const name = row.name
-		// 			common.create_dom_element({
-		// 				element_type	: "span",
-		// 				class_name		: "info_value",
-		// 				inner_html		: name,
-		// 				parent			: line
-		// 			})
-		// 		}
-
-		// 	// place
-		// 		if (row.place && row.place.length>0) {
-
-		// 			common.create_dom_element({
-		// 				element_type 	: "label",
-		// 				class_name 		: "",
-		// 				inner_html 	: tstring.place || "Place",
-		// 				parent 			: line
-		// 			})
-
-		// 			const place = row.place
-		// 			common.create_dom_element({
-		// 				element_type	: "span",
-		// 				class_name		: "info_value",
-		// 				inner_html		: place,
-		// 				parent			: line
-		// 			})
-		// 		}
-
-		// 	// public_info
-		// 		if (row.public_info && row.public_info.length>0) {
-
-		// 			common.create_dom_element({
-		// 				element_type	: "label",
-		// 				inner_html		: tstring.public_info || "Public info",
-		// 				parent			: line
-		// 			})
-
-		// 			const public_info = row.public_info
-		// 			common.create_dom_element({
-		// 				element_type	: "span",
-		// 				class_name		: "info_value",
-		// 				inner_html		: public_info,
-		// 				parent			: line
-		// 			})
-		// 		}
-
-		// 	// link
-		// 		if (row.link && row.link.length>0) {
-
-		// 			common.create_dom_element({
-		// 				element_type	: "label",
-		// 				inner_html		: tstring.link || "Link",
-		// 				parent			: line
-		// 			})
-
-		// 			const link = row.link
-		// 			common.create_dom_element({
-		// 				element_type	: "span",
-		// 				class_name		: "info_value",
-		// 				inner_html		: link,
-		// 				parent			: line
-		// 			})
-		// 		}
-
-		// 	// bibliography
-		// 		if (row.bibliography && row.bibliography.length>0) {
-
-		// 			common.create_dom_element({
-		// 				element_type	: "label",
-		// 				class_name		: "",
-		// 				inner_html		: tstring.bibliografia || "Bibliography",
-		// 				parent			: line
-		// 			})
-
-		// 			const bibliography = common.clean_gaps(row.bibliography) // , splitter=" | ", joinner=", "
-		// 			common.create_dom_element({
-		// 				element_type	: "span",
-		// 				class_name		: "info_value",
-		// 				inner_html		: bibliography,
-		// 				parent			: line
-		// 			})
-		// 		}
+		for (let index = 0; index < types.length; index++) {
+			
+			sql_filter += index != types.length - 1 ? `JSON_CONTAINS(relations_types, '"${types[index]}"') OR ` : `JSON_CONTAINS(relations_types, '"${types[index]}"')`
+	
+		}
 
 
+		try {
+			const hijos = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'mints',
+					ar_fields: ["*"],
+					sql_filter: sql_filter,
+					limit: 0,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
+				}
+			});
+			return hijos;
 
-		// 	// row_wrapper
-		// 		const row_wrapper = common.create_dom_element({
-		// 			element_type	: "div",
-		// 			class_name		: "row_wrapper"
-		// 		})
-		// 		row_wrapper.appendChild(fragment)
+		} catch (error) {
+			console.error("Error cargando datos:", error);
+		}
 
 
-		// 	return row_wrapper
-		// },//end draw_hoard
-
-
+	}
+	
 
 }//end render_hoard

@@ -2,7 +2,7 @@
 /*eslint no-undef: "error"*/
 "use strict";
 
-
+/*hola amor*/
 
 var footer =  {
 
@@ -54,8 +54,11 @@ var footer =  {
 		// root level
 			const root_rows = footer_data.filter(el => el.parent===root_term_id)
 			const root_rows_length = root_rows.length
-			for (let i = 0; i < root_rows_length; i++) {
 
+			
+			for (let i = 0; i < root_rows_length; i++) {
+				
+				console.log(root_rows)
 				const item = root_rows[i]
 
 				const child_node = self.build_child_node(item)
@@ -90,11 +93,11 @@ var footer =  {
 			const image = row.images && row.images[0]
 				? (row.images[0].indexOf('http')===0)
 					? row.images[0]
-					: page_globals.__WEB_BASE_URL__ + row.images[0]
-				: null
+					: page_globals.__WEB_MEDIA_BASE_URL__ + row.images[0]
+				: null 
 			const url = (row.web_path.indexOf('http')===0)
 				? row.web_path
-				: page_globals.__WEB_MEDIA_BASE_URL__ + '/' + row.web_path
+				: page_globals.__WEB_ROOT_WEB__ + '/' + row.web_path
 			const label		= row.label
 			const children	= row.children
 			const menu		= row.menu || 'no'
@@ -110,7 +113,7 @@ var footer =  {
 				class_name		: "footer-links-li",
 				parent			: fragment
 			})
-
+ 
 		// content
 			if (parent===self.footer_root.term_id) {
 
@@ -160,15 +163,16 @@ var footer =  {
 						}
 
 					// image
-						const image_src = image.replace('.jpg','.png')
 						const image_node = common.create_dom_element({
 							element_type	: 'img',
 							class_name		: 'footer_image_item',
-							src				: image_src,
+							src				: image.replace("1.5MB","original").replace(".jpg",".png"),
 							title			: label,
 							parent			: link
 						})
 						image_node.loading = 'lazy'
+						
+						
 				}else{
 
 					// link

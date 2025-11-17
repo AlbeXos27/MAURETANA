@@ -175,6 +175,8 @@
 		#	$this->page_title = $this->row->term;
 		#}
 		$page_title = $this->get_page_title();
+		$title_page = explode(" |",$page_title);
+		$title_page_final = $title_page[0];
 
 
 

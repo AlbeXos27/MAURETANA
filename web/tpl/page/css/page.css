@@ -698,6 +698,7 @@ input.form-control:not(:placeholder-shown) {
 body.touch .poptrox-popup .closer,
 body.touch .poptrox-popup .nav-previous,
 body.touch .poptrox-popup .nav-next {
+
   opacity: 1 !important;
 }
 @media screen and (max-width: 980px) {
@@ -909,17 +910,19 @@ body {
   font-family: Helvetica Neue, sans-serif;
   letter-spacing: 0.5px;
   font-weight: 200;
-  min-height: 100vh;
-  position: relative;
-  background-color: white;
+  overflow-x: hidden;
+  margin: 0;
 }
+/*
 a {
   padding: 0.3em 0 !important;
   color: #b7996d;
 }
+
 a:hover {
   color: #80461f !important;
 }
+  */
 .content p strong {
   font-size: 1.25em;
 }
@@ -1007,34 +1010,43 @@ nav ul {
   opacity: 0.8;
 }
 #wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   background: white;
   background-image: url('../../assets/images/overlay_white.png');
-}
-#wrapper #main {
-  min-height: calc(100vh - 27.9rem);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+
 }
 
+#wrapper #main {
+  min-height: calc(100vh - 33rem);
+  padding-top: 3.5%;
+}
+@media screen and (max-width: 1280px) {
+  #wrapper #main {
+    min-height: calc(100vh - 24.9rem);
+    padding-top: 25%;
+  }
+}
 @media screen and (max-width: 736px) {
 }
 #wrapper .active-pointer {
   cursor: pointer;
 }
-#wrapper .underline-text {
+/* #wrapper .underline-text {
   border-bottom: dotted 1px rgba(190, 135, 90, 0.5);
-}
+} */
 .pic {
   width: 100%;
 }
 .golden-color {
   color: #b7996d;
 }
+
 #main {
   display: table;
   width: 80%;
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
 }
 @media screen and (max-width: 736px) {
@@ -1145,6 +1157,21 @@ nav ul {
     width: 95%;
   }
 }
+
+.links_adicionales{
+  position: absolute;
+  display: flex; /* Define el contenedor como flexbox */
+  justify-content: center; /* Centra el contenido horizontalmente */
+  align-items: center; /* Centra el contenido verticalmente */
+  right: 20%;
+  width: 8%;
+  height: 31%;
+  box-sizing: border-box; /* Incluye el padding en el ancho total */
+  overflow: hidden;
+  z-index: 2;
+}
+
+
 .hide {
   display: none !important;
 }
@@ -1201,6 +1228,7 @@ a.image_link {
   border: none;
   width: 100%;
   height: 100%;
+  opacity: 1;
 }
 a.image_link img {
   border-radius: initial;
@@ -1257,7 +1285,7 @@ a.image_link img {
 .float-prompt {
   position: fixed;
   top: 100px;
-  background-color: #333333;
+  background-color: #4e8a73;
   display: flex;
   flex-flow: column;
   padding: 2em;
@@ -1943,4 +1971,3 @@ input[type=range]:focus::-ms-fill-lower {
 input[type=range]:focus::-ms-fill-upper {
   background: #9A905D;
 }
-/*# sourceMappingURL=page.css.map */

@@ -7,611 +7,390 @@
 
 function map_factory() {
 
-	// vars
-		// target. DOM element where map is placed
-			this.target	= null
+	this.map_container  = [];
+	this.map_position   = null;
+	this.source_maps    = [];
+	this.map = null
+	this.map_node = null
+	this.result = null
+	this.findspot = false
+	this.unique = false
+	this.zoom = 8
+	this.DEV_MODE = false;
 
-		// data. Database parsed rows data to create the map
-			this.data = null
 
-		// source_maps
-			this.source_maps = {}
+	this.obtain_location = function(georef){
 
-		// popup_builder. Use custom options popup_builder function or fallback to default
-			this.popup_builder = null
+		for (let index = 0; index < georef.layer_data.length; index++) {
+				
+			if (georef.layer_data[index].type == "Point") {
+				
+				return [georef.layer_data[index].lat,georef.layer_data[index].lon,"Point"]
+			}else{
 
-		// default map vars set
-			this.map				= null
-			this.layer_control		= false
-			this.loaded_document	= false
-			this.icon_main			= null
-			this.icon_finds			= null
-			this.icon_uncertain		= null
-			this.popupOptions		= null
-			this.current_layer		= null
-			this.current_group		= null
-			this.option_selected	= null
+				let lat = 0;
+				let lon = 0;
 
-		// initial_map_data. Default fallback positions
-			this.initial_map_data	= {
-				lat		: 40.65993615913156,
-				lon		: -3.2304345278385687,
-				zoom	: 5, // (13 for dare, 8 for osm)
-				alt		: 0
-			}
-
-		// source_maps. Default fallback
-			this.source_maps = [
-				{
-					name	: "osm",
-					url		: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-					default	: true
-				},
-				{
-					name	: "arcgis",
-					url		: '//server.arcgisonline.com/ArcGIS/' + 'rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+				for (let j = 0; j < georef.layer_data[index].lon.length; j++) {
+					lon += georef.layer_data[index].lon[j][0];
+					lat += georef.layer_data[index].lon[j][1];
 				}
-			]
 
-		// icon_main (default icon properties)
-			this.icon_main = null // set on parse
-
-		// popup_options
-			this.popup_options
-
-
-		// map_container_div (created inside map_container)
-			this.map_container_div = null
-
-
-
-	/**
-	* INIT
-	*/
-	this.init = function(options) {
-		if(SHOW_DEBUG===true) {
-			// console.log("--> map_factory init options:",options)
+				return [lat/georef.layer_data[index].lon.length,lon/georef.layer_data[index].lon.length,"Polygon"]
+			}
+			
 		}
 
-		const self = this
 
-		// options
-			const source_maps		= options.source_maps || self.source_maps
-			const popup_builder		= options.popup_builder || self.build_popup_content
-			const map_position		= options.map_position || self.initial_map_data
-			const map_container		= options.map_container
-			const legend			= options.legend || null
-			const add_layer_control	= typeof options.add_layer_control==='undefined' ? true : options.add_layer_control
-			const popup_options		= options.popup_options || {
-				// maxWidth						Number	300	Max width of the popup, in pixels.
-				maxWidth : 420,
-				// minWidth						Number	50	Min width of the popup, in pixels.
-				// maxHeight					Number	null	If set, creates a scrollable container of the given height inside a popup if its content exceeds it.
-				// maxHeight : 420,
-				// autoPan						Boolean	true	Set it to false if you don't want the map to do panning animation to fit the opened popup.
-				// autoPanPaddingTopLeft		Point	null	The margin between the popup and the top left corner of the map view after autopanning was performed.
-				// autoPanPaddingBottomRight	Point	null	The margin between the popup and the bottom right corner of the map view after autopanning was performed.
-				// autoPanPadding				Point	Point(5, 5)	Equivalent of setting both top left and bottom right autopan padding to the same value.
-				// keepInView					Boolean	false	Set it to true if you want to prevent users from panning the popup off of the screen while it is open.
-				// closeButton					Boolean	true	Controls the presence of a close button in the popup.
-				closeButton : false,
-				// autoClose					Boolean	true	Set it to false if you want to override the default behavior of the popup closing when another popup is opened.
-				// closeOnEscapeKey				Boolean	true	Set it to false if you want to override the default behavior of the ESC key for closing of the popup.
-				// closeOnClick					Boolean	*	Set it if you want to override the default behavior of the popup closing when user clicks on the map. Defaults to the map's closePopupOnClick option.
-				// className					String	''	A custom CSS class name to assign to the popup.
-				className : 'map_popup'
-			}
-			const icon_main = options.marker_icon
-				? L.icon(options.marker_icon)
-				: L.icon({
-					iconUrl			: page_globals.__WEB_TEMPLATE_WEB__ + "/assets/lib/leaflet/images/naranja.png",
-					shadowUrl		: page_globals.__WEB_TEMPLATE_WEB__ + "/assets/lib/leaflet/images/marker-shadow.png",
-					iconSize		: [47, 43], // size of the icon
-					shadowSize		: [41, 41], // size of the shadow
-					iconAnchor		: [10, 19], // point of the icon which will correspond to marker's location
-					shadowAnchor	: [0, 20],  // the same for the shadow
-					popupAnchor		: [12, -20] // point from which the popup should open relative to the iconAnchor
-				})
-
-		// fix vars
-			self.source_maps		= source_maps
-			self.map_position		= map_position
-			self.map_container		= map_container
-			self.popup_builder		= popup_builder
-			self.popup_options		= popup_options
-			self.icon_main			= icon_main
-			self.legend				= legend
-			self.add_layer_control	= add_layer_control
+	}
 
 
-		return self.render_base_map()
-	}//end init
+	this.init = function(options) {
+
+		const self = this;
+		self.map_node  = options.map_node || null;
+		self.map_container  = options.map_container  || null;
+		self.map_position   = options.map_position   || [36.5297, -6.2924]; // Cádiz por defecto
+		self.popup_options  = options.popup_options  || {};
+		self.source_maps    = options.source_maps    || [];
+		self.result = options.result || null;
+		self.findspot = options.findspot || false;
+		self.unique = options.unique || false;
+		self.zoom = options.zoom || 8;
+		self.DEV_MODE = options.DEV_MODE || false;
+		// Asegurarte de obtener el elemento DOM
+		const containerElement = typeof self.map_container === "string"
+			? document.getElementById(self.map_container)
+			: self.map_container;
+
+		if (!containerElement) {
+			console.error("Contenedor del mapa no válido.");
+			return;
+		}
+
+		// Crear el mapa con Leaflet centrado en Cádiz
+		self.map = L.map(containerElement, { preferCanvas: true }).setView(self.map_position, self.zoom);
+		self.add_layer_control(self.map,self.source_maps)
+
+		if(!self.findspot){
+
+			L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {}).addTo(self.map);
+			L.tileLayer("https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png", {}).addTo(self.map);		
+		}else{
+
+			L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(self.map);
+			L.tileLayer("https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png").addTo(self.map);		
+		}
+		
+			const clusters = self.add_markers(self.map,self.result,self.map_node)
+			self.create_legend(self.map,clusters)
+		
+
+		setTimeout(() => {
+		self.map.invalidateSize();
+		}, 200);
+
+		return self.map;
+
+	},
+
+	this.add_layer_control = function(map, source_maps) {
 
 
+		if (source_maps.length > 0) {
+			const baseLayers = {};
+			source_maps.forEach(layer => {
+				// Suponiendo que layer tiene 'name', 'url' y 'options'
+				baseLayers[layer.name] = L.tileLayer(layer.url, layer.options);
+			});
 
-	/**
-	* RENDER_BASE_MAP
-	*/
-	this.render_base_map = function() {
+			L.control.layers(baseLayers).addTo(map);
+		}
+	};
 
-		const self = this
 
-		return new Promise(function(resolve){
+		this.add_markers = function(map,data,map_node){
 
-			// reset map if already exists instance
-				if (self.map) {
-					// resolve(resolve(self.map))
-					// return
-					self.map.off(); // clear All Event Listeners
-					self.map.remove();	// remove map
+			// Clústeres separados por tipo
+			const clusterHallazgos = L.markerClusterGroup({
+				iconCreateFunction: function (cluster) {
+					return L.divIcon({
+					html: `<div class="custom-cluster">${cluster.getChildCount()}</div>`,
+					className: "marker-cluster", 
+					iconSize: [40, 40]
+					});
 				}
-
-			// map position
-				const map_position	= self.map_position
-				const map_x			= parseFloat(map_position.lat)
-				const map_y			= parseFloat(map_position.lon)
-				const map_zoom		= parseInt(map_position.zoom)
-				const map_alt		= parseInt(map_position.alt)
-
-			// reset map vars
-				self.map				= null
-				self.layer_control		= false
-				self.loaded_document	= false
-				self.icon_finds			= null
-				self.icon_uncertain		= null
-				self.popupOptions		= null
-				self.current_layer		= null
-				self.current_group		= null
-				self.option_selected	= null
-
-			// layer. Add layer to map
-				let default_layer	= null
-				const base_maps		= {} // layer selector
-				for (let i = 0; i < self.source_maps.length; i++) {
-
-					const source_map	= self.source_maps[i]
-					const layer			= new L.TileLayer(source_map.url, source_map.options)
-
-					base_maps[source_map.name] = layer
-
-					if (i===0 || source_map.default===true) {
-						default_layer = layer
-					}
+				});
+			const clusterCecas = L.markerClusterGroup({
+				iconCreateFunction: function (cluster) {
+					return L.divIcon({
+					html: `<div class="custom-cluster">${cluster.getChildCount()}</div>`,
+					className: "marker-cluster", 
+					iconSize: [40, 40]
+					});
 				}
-
-				const container = self.map_container_div || common.create_dom_element({
-					element_type	: "div",
-					class_name		: "",
-					parent			: self.map_container
-				})
-				self.map_container_div = container
-
-			// map
-				self.map = new L.map(container, {
-					layers				: [default_layer],
-					center				: new L.LatLng(map_x, map_y),
-					zoom				: map_zoom,
-					fullscreenControl	: true // button fullscreen. Needs the plugin 'Leaflet.fullscreen.min.js'
+				});
+			const clusterComplejos = L.markerClusterGroup({
+				iconCreateFunction: function (cluster) {
+					return L.divIcon({
+					html: `<div class="custom-cluster">${cluster.getChildCount()}</div>`,
+					className: "marker-cluster", 
+					iconSize: [40, 40]
+					});
+				}
 				});
 
-			// layer selector
-				if (self.add_layer_control) {
-					self.layer_control = L.control.layers(base_maps).addTo(self.map);
-				}
+			// --- Iconos ---
 
-			// disable zoom handlers
-				self.map.scrollWheelZoom.disable();
+			const iconoCeca = L.icon({
+				iconUrl: this.unique ? '../tpl/assets/images/map/IMG_8276.png': './tpl/assets/images/map/IMG_8276.png',
+				iconSize: [32, 32], 
+				iconAnchor: [16, 32], 
+				popupAnchor: [0, -32] 
+			});
 
-			// popupOptions
-				self.popupOptions =	self.popup_options
+			const iconoComplejo = L.icon({
+				iconUrl: this.unique ? '../tpl/assets/images/map/IMG_5962.png': './tpl/assets/images/map/IMG_5962.png',
+				iconSize: [32, 32], 
+				iconAnchor: [16, 32], 
+				popupAnchor: [0, -32] 
+			});
 
-			// fix vars
-				// target. DOM element where map is placed
-				// self.target = target
-				// data. Preparsed data from rows. Contains items with properties 'lat', 'lon', and 'data' like [{lat: lat, lon: lon, data: []}]
+			const iconoHallazgo = L.icon({
+				iconUrl: this.unique ? '../tpl/assets/images/map/orange.png' : './tpl/assets/images/map/orange.png',
+				iconSize: [32, 32], 
+				iconAnchor: [16, 32], 
+				popupAnchor: [0, -32] 
+			});
 
-			// init map library
-				// self.init({
-				// 	source_maps		: source_maps,
-				// 	map_position	: map_position
-				// })
+			// --- Hallazgos ---
+			for (let index = 0; index < data.hallazgos.datos.length; index++) {
 
-			// draw map
-				// self.parse_data_to_map(data)
+				let data_hallazgo = {
+					lat : "",
+					lon : ""
+				};
 
-			// legend
-				if (self.legend && typeof self.legend==="function") {
-					const legend_node = self.legend()
-					self.map_container.appendChild(legend_node)
-				}
+				
+				const georef_hallazgo = JSON.parse(data.hallazgos.datos[index].georef)
+				
+				if(georef_hallazgo){
 
-
-			resolve(self.map)
-		})
-	}//end render_base_map
-
-
-
-	/**
-	* PARSE_DATA_TO_MAP
-	*/
-	this.parse_data_to_map = function(data, caller_mode) {
-		// console.log("parse_data_to_map data:",data);
-
-		const self = this
-
-		return new Promise(function(resolve){
-
-			// reset. Reset all map layers
-				if (self.current_group) {
-					// Reset points
-					self.current_group.clearLayers();
-				}
-
-			// no data check cases
-				if (!data || data.length<1) {
-					// self.map.eachLayer(function (layer) {
-					//     self.map.removeLayer(layer);
-					// });
-					self.render_base_map()
-					// self.reset_map()
-					resolve(self.map_container)
-					return false
-				}
-
-			// Group data elements by place
-				const group_data = (data[0].geojson)
-					? self.group_by_place_geojson(data)
-					: self.group_by_place(data)
-				const group_data_length	= group_data.length
-
-
-			// create marker. Build marker with custom icon and popup
-				const create_marker = function(element, latlng, marker_icon, popup) {
-					const marker = L.marker(latlng, {icon: marker_icon}).bindPopup(popup) //.openPopup();
-					marker.on('mousedown', function(e) {
-						// event publish map_selected_marker
-						event_manager.publish('map_selected_marker', {
-							item	: element,
-							event	: e
-						})
-					})
-					return marker
-				}
-
-			const ar_markers = []
-			for (let i = group_data_length - 1; i >= 0; i--) {
-
-				const element = group_data[i]
-
-				// des
-					// var ar_places = JSON.parse(element.lugar)
-					// // Iterate all
-					// var ar_places_length = ar_places.length
-					// for (var j = 0; j < ar_places_length; j++) {
-
-					// 	var current_place = ar_places[j]
-					// 	current_place.layer_data.forEach(function(layer_data) {
-					// 		//console.log(layer_data);
-					// 		//console.log("element.uncertain:",element.uncertain,layer_data);
-					// 		if (layer_data!=="undefined" && layer_data.type==="Point") {
-
-					// 			var lat	= layer_data.lat
-					// 			var lon	= layer_data.lon
-					// 			var current_tipo_section_id = element.tipo_section_id
-
-					// 			var popup_content = self.build_popup_content(element);
-
-					// 			if(caller_mode==="load_hallazgos" || caller_mode==="load_culturas" || caller_mode==="load_epocas"){
-					// 				var marker_icon = self.icon_finds // green
-					// 			}else{
-					// 				var marker_icon = self.icon_main // Default
-					// 			}
-
-					// 			// Marker set popup and click event
-					// 			var marker = L.marker([lat, lon], {icon: marker_icon}).bindPopup(popup_content)
-					// 				marker.on('click', function(e) {
-					// 					self.show_tipos({
-					// 						tipo_section_id : current_tipo_section_id,
-					// 						order 			: null,
-					// 						caller_mode 	: caller_mode
-					// 					})
-					// 				})
-					// 			ar_markers.push(marker)
-					// 		}
-					// 	});//end current_place.layer_data.forEach(function(layer_data)
-					// }
-
-				// marker_icon
-				const marker_icon = element.marker_icon
-					? L.icon(element.marker_icon)
-					: self.icon_main // already parsed on init
-
-				const popup_content	= self.popup_builder(element)
-
-				const popup = L.popup(self.popupOptions)
-						.setLatLng([element.lat, element.lon])
-						.setContent(popup_content)
-						// .openOn(self.map);	// auto open first marker
-
-				// console.log("+++++++++++++++ element.geojson:",element.geojson, element);
-				if (element.geojson) {
-
-					for (let k = 0; k < element.geojson.length; k++) {
-
-						const geojsonFeature = element.geojson[k].layer_data
-
-						const marker = L.geoJSON(geojsonFeature, {
-							pointToLayer : function(feature, latlng) {
-								// return create_marker(element, latlng, marker_icon, popup)
-								return L.marker(latlng, {icon: marker_icon})
-							},
-							onEachFeature : function(feature, layer) {
-								layer.bindPopup(popup)
-							},
-							style : function() {
-								// see: https://leafletjs.com/SlavaUkraini/reference.html#path-stroke
-								return element.marker_icon.path || null
-								// return {
-								// 	weight		: 3, // Stroke width in pixels
-								// 	opacity		: 1, // Stroke opacity
-								// 	color		: 'orange',  // Stroke color
-								// 	fillColor	: 'orange', // Fill color. Defaults to the value of the color option
-								// 	fillOpacity	: 0.7 // Fill opacity
-							 	// };
-							}
-						})
-
-						marker.on('mousedown', function(e) {
-							// event publish map_selected_marker
-							event_manager.publish('map_selected_marker', {
-								item	: element,
-								event	: e
-							})
-						})
-
-						ar_markers.push(marker)
-					}
-
+					
+					const location = this.obtain_location(georef_hallazgo[0]);
+					data_hallazgo.lat = location[0]
+					data_hallazgo.lon = location[1]
+				
 				}else{
 
-					// marker. Set popup and click event
-					// const marker = L.marker([element.lat, element.lon], {icon: marker_icon}).bindPopup(popup) //.openPopup();
-					// 	  marker.on('click', function(e) {
-					// 		// event publish map_selected_marker
-					// 		event_manager.publish('map_selected_marker', {
-					// 			item	: element,
-					// 			event	: e
-					// 		})
-					// 	  })
-					const marker = create_marker(element, [element.lat, element.lon], marker_icon, popup)
-					ar_markers.push(marker)
-				}
-			}
-			// console.log("ar_markers:",ar_markers);
+					try {
 
-			// group . Create a layer group and add to map
-				if (ar_markers.length>0) {
-					// self.current_group = L.layerGroup(ar_markers)
-					// self.current_group.addTo(self.map)
-					const cluster_markers = L.markerClusterGroup({
-						spiderfyOnMaxZoom	: true,
-						showCoverageOnHover	: false,
-						zoomToBoundsOnClick	: true,
-						maxClusterRadius	: 30,
-						iconCreateFunction: function(cluster) {
-							return L.divIcon({ html: cluster.getChildCount(), className: 'mycluster', iconSize: L.point(40, 40) });
-						}
-					})
-					for (let k = 0; k < ar_markers.length; k++) {
-						cluster_markers.addLayer(ar_markers[k])
+						data_hallazgo = JSON.parse(data.hallazgos.datos[index].map)
+
+					} catch (error) {
+
+						data_hallazgo = data.hallazgos.datos[index].map
+
 					}
-					self.map.addLayer(cluster_markers);
+
 				}
-
-			// feature_group . Fit points positions on map and adjust the zoom
-				if (ar_markers && ar_markers.length>0) {
-					const feature_group = new L.featureGroup(ar_markers)
-					if (feature_group) {
-
-						self.feature_group = feature_group
-
-						self.map.fitBounds(feature_group.getBounds())
-
-						if (self.map.getZoom()>18) {
-							self.map.setZoom(18)
-						}
-					}
-				}
-
-				self.map.on('popupopen', function(e) {
-					const wrapper	= e.popup._wrapper
-					const ar_img	= wrapper.querySelectorAll('img')
-					if (ar_img) {
-						for (let i = 0; i < ar_img.length; i++) {
-							if (!ar_img[i].classList.contains('loaded')) {
-								ar_img[i].image_in_dom()
+				
+				if (data_hallazgo != null) {
+					const markerHallazgo = L.marker([data_hallazgo.lat, data_hallazgo.lon], { icon: iconoHallazgo })
+						.bindPopup(`<b>Hallazgo</b><br>${data.hallazgos.datos[index].name}`)
+						.on("click", async function () {
+							const monedas = await map_node.cargarMonedasHallazgos(data.hallazgos.datos[index].name);
+							while (map_node.rows_container.hasChildNodes()) {
+								map_node.rows_container.removeChild(map_node.rows_container.lastChild);
 							}
-						}
-					}
-				});
-
-
-			resolve(self.map_container)
-		})
-	}//end parse_data_to_map
-
-
-
-	/**
-	* GROUP_BY_PLACE
-	* Group results rows by property 'lugar' (place)
-	*/
-	this.group_by_place = function(data) {
-
-		const group_data = []
-
-		const data_length = data.length
-		for (let i = 0; i < data_length; i++) {
-
-			const item				= data[i]
-			const group_data_item	= group_data.find(el => el.lat===item.lat && el.lon===item.lon)
-
-			if (group_data_item) {
-				// already exists
-				group_data_item.group.push(item.data)
-			}else{
-				// create new one
-				const new_item = {
-					lat			: item.lat,
-					lon			: item.lon,
-					geojson		: item.geojson,
-					marker_icon	: item.marker_icon,
-					group		: [item.data]
-				}
-				group_data.push(new_item)
-			}
-		}
-
-		return group_data
-	}//end group_by_place
-
-
-
-	/**
-	* GROUP_BY_PLACE_GEOJSON
-	* Group results rows by property 'lugar' (place)
-	*/
-	this.group_by_place_geojson = function(data) {
-
-		const group_data = []
-
-		const data_length = data.length
-		for (let i = 0; i < data_length; i++) {
-
-			const element			= data[i]
-			const geojson			= element.geojson
-			const geojson_length	= geojson.length
-
-			for (let k = 0; k < geojson_length; k++) {
-
-				const features = geojson[k] && geojson[k].layer_data
-					? geojson[k].layer_data.features
-					: []
-
-				for (let g = 0; g < features.length; g++) {
-
-					const coordinates	= features[g].geometry.coordinates
-					const lat			= coordinates[0]
-					const lon			= coordinates[1]
-
-					const group_data_item = group_data.find(el => el.lat===lat && el.lon===lon)
-					if (group_data_item) {
-						// already exists
-						group_data_item.group.push(element.data)
-					}else{
-						// create new one
-						const new_item = {
-							lat			: lat,
-							lon			: lon,
-							geojson		: [geojson[k]],
-							marker_icon	: element.marker_icon,
-							group		: [element.data],
-						}
-						group_data.push(new_item)
-					}
-					break; // only first is used to group
+							map_node.render_rows(data.hallazgos.datos[index], monedas.result);
+							this.openPopup();
+						});
+					clusterHallazgos.addLayer(markerHallazgo);
 				}
 			}
-		}
-		// console.log("+++ data:",data);
-		// console.log("+++ group_data:",group_data);
 
-		return group_data
-	}//end group_by_place_geojson
+			// --- Cecas ---
+			for (let index = 0; index < data.cecas.datos.length; index++) {
 
+				let rawMap = data.cecas.datos[index].map;
+				let data_ceca;
 
-
-	/**
-	* BUILD_POPUP_CONTENT
-	* Send calback option to overwrite current function
-	*/
-	this.build_popup_content = function(data) {
-
-		console.log("(!) Using default build_popup_content function:", data);
-
-		const self = this
-
-		const popup_wrapper = common.create_dom_element({
-			element_type	: "div",
-			class_name		: "popup_wrapper",
-			inner_html		: "TITLE: " + data.title + " [" + data.section_id + "]"
-		})
-		return popup_wrapper
-
-		const ar_group = data.group
-
-		// order ar_group
-			const collator = new Intl.Collator('es',{ sensitivity: 'base', ignorePunctuation:true});
-			ar_group.sort( (a,b) => {return collator.compare(a.nombre , b.nombre)});
-
-		// title
-			const ar_group_length = ar_group.length
-			for (let i = 0; i < ar_group_length; i++) {
-
-				const nombre			= ar_group[i].nombre.replace(',', ', ') // Add space between names separated with comma
-				const tipo_section_id	= ar_group[i].tipo_section_id
-
-				const title = common.create_dom_element({
-					element_type	: "a",
-					parent			: popup_wrapper,
-					inner_html		: nombre,
-					data_set		: {
-						tipo_section_id	: JSON.stringify(tipo_section_id),
-						nombre			: nombre
+					// Comprobamos si map es string o ya es objeto
+					if (typeof rawMap === "string") {
+						try {
+							data_ceca = JSON.parse(rawMap);
+						} catch (e) {
+							console.error("El valor no es un JSON válido:", rawMap, e);
+							continue; // saltamos este índice si falla
+						}
+					} else {
+						data_ceca = rawMap;
 					}
-				})
-				title.addEventListener("click",function(e){
-					var tipos = JSON.parse(e.target.dataset.tipo_section_id)
-					self.show_tipos({
-						tipo_section_id : tipos,
-						caller_mode 	: data.caller_mode
-					})
-				})
+				if (data_ceca != null && data_ceca.lat !== undefined && data_ceca.lon !== undefined) {
+					const markerCeca = L.marker([data_ceca.lat, data_ceca.lon], { icon: iconoCeca })
+						.bindPopup(`<b>Ceca</b><br>${data.cecas.datos[index].name}`)
+						.on("click", async function () {
+							const monedas = await map_node.cargarMonedasCecas(data.cecas.datos[index].name);
+							while (map_node.rows_container.hasChildNodes()) {
+								map_node.rows_container.removeChild(map_node.rows_container.lastChild);
+							}
+							map_node.render_rows(data.cecas.datos[index], monedas.result);
+							this.openPopup();
+						});
+					clusterCecas.addLayer(markerCeca);
+				}
 			}
 
-		// label
-			if (data.type_label) {
-				var type = common.create_dom_element({
-					element_type 	: "div",
-					parent 			: popup_wrapper,
-					text_content 	: data.type_label
-				})
+			// --- Complejos ---
+			if (data.complejos.datos != null) {
+				for (let index = 0; index < data.complejos.datos.length; index++) {
+					let data_complejos = null;
+					try {
+						data_complejos = JSON.parse(data.complejos.datos[index].map);
+					} catch (error) {
+						data_complejos = data.complejos.datos[index].map;
+					}
+
+					if (data_complejos != null) {
+						const markerComplejo = L.marker([data_complejos.lat, data_complejos.lon], { icon: iconoComplejo })
+							.bindPopup(`<b>Complejo</b><br>${data.complejos.datos[index].name}`)
+							.on("click", async function () {
+								const monedas = await map_node.cargarMonedasComplejos(data.complejos.datos[index].name);
+								while (map_node.rows_container.hasChildNodes()) {
+									map_node.rows_container.removeChild(map_node.rows_container.lastChild);
+								}
+								map_node.render_rows(data.complejos.datos[index], monedas.result);
+								this.openPopup();
+							});
+						clusterComplejos.addLayer(markerComplejo);
+					}
+				}
 			}
 
+			// --- Añadir clusters al mapa ---
+			map.addLayer(clusterHallazgos);
+			map.addLayer(clusterCecas);
+			map.addLayer(clusterComplejos);
 
-		return popup_wrapper
-	}//end build_popup_content
+			const clusters = {clusterHallazgos ,clusterCecas ,clusterComplejos};
+			return clusters;
+		};
+
+		this.create_legend = function(map,clusters){
+
+			
+
+			L.control.Legend({
+			position: "bottomleft",
+			collapsed: false,
+			title: "Leyenda",
+			columns:2,
+			legends: [
+				{
+				label: "Ceca",
+				type: "image",
+				url: this.unique ? '../tpl/assets/images/map/IMG_8276.png' : './tpl/assets/images/map/IMG_8276.png',
+				layers: clusters.clusterCecas
+				},
+				{
+				label: "Hallazgo",
+				type: "image",
+				url: this.unique ? '../tpl/assets/images/map/orange.png' : './tpl/assets/images/map/orange.png',
+				layers: clusters.clusterHallazgos
+				},
+				{
+				label: "Complejo",
+				type: "image",
+				url: this.unique ? '../tpl/assets/images/map/IMG_5962.png' : './tpl/assets/images/map/IMG_5962.png',
+				layers: clusters.clusterComplejos
+				}
+			]
+			}).addTo(map);
+
+// Grupo para guardar lo dibujado
+const drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+// Función para cargar rutas desde cache
+function cargarRutasCache() {
+    const rutasCache = localStorage.getItem("rutas");
+    if (rutasCache) {
+		console.log("RUTAS CACHE", rutasCache)
+        const data = JSON.parse(rutasCache);
+        L.geoJSON(data, {
+            style: function(feature) {
+                return { color: feature.properties.color || "blue", weight: 6, dashArray: "5,5" };
+            }
+        }).eachLayer(layer => drawnItems.addLayer(layer));
+    } else {
+        console.log("No hay rutas en cache aún.");
+    }
+}
+
+	// Llamar a la función al inicio
+	cargarRutasCache();
+
+
+	// Control de dibujo: todas las polilíneas verdes y grosor 6
+	if (this.DEV_MODE) {
+
+    const drawControl = new L.Control.Draw({
+        draw: {
+            polyline: {
+                shapeOptions: { color: "green", weight: 2 }, // color y grosor
+                repeatMode: false // dibuja una ruta a la vez
+            },
+            polygon: false,
+            rectangle: false,
+            circle: false,
+            marker: false
+        },
+			edit: { featureGroup: drawnItems }
+	});
+
+		map.addControl(drawControl);
+
+		map.on(L.Draw.Event.CREATED, function(e) {
+			const layer = e.layer;
+			// Guardar color en propiedades para luego exportar
+			layer.feature = layer.feature || { type: "Feature", properties: {} };
+			layer.feature.properties.color = "green";
+			drawnItems.addLayer(layer);
+		});
+
+		// Botón “Guardar” dentro del mapa (ahora guarda en cache)
+		const GuardarControl = L.Control.extend({
+			options: { position: 'topleft' },
+			onAdd: function(map) {
+				const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+				container.style.backgroundColor = 'white';
+				container.style.padding = '5px';
+				container.style.cursor = 'pointer';
+				container.innerHTML = '💾 Guardar';
+				container.onclick = function() {
+					// Tomamos todas las capas y creamos un solo FeatureCollection
+					const geojsonData = drawnItems.toGeoJSON();
+					localStorage.setItem("rutas", JSON.stringify(geojsonData));
+					alert('Rutas guardadas en cache correctamente');
+					};
+				return container;
+				}
+			});
+		map.addControl(new GuardarControl());
+		}
+			
+
+	}
 
 
 
-	/**
-	* RESET_MAP
-	*/
-	this.reset_map = function() {
 
-		const self = this
 
-		const map_data = self.initial_map_data
+		this.move_map_to_point = function(location){
+			this.map.setView([location.lat, location.lon], 14);
 
-		//self.map.panTo(new L.LatLng(map_data.x, map_data.y))
-		//self.map.setZoom(map_data.zoom)
-
-		self.map.setView(new L.LatLng(map_data.lat, map_data.lon), map_data.zoom);
-
-		return true
-	}//end reset_map
-
+		};
 
 
 }//end map_factory

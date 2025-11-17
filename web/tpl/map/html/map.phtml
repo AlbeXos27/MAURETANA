@@ -5,7 +5,10 @@
 
 	// Current controller add
 	require($base_path .'/'. $cwd .'.php');
+
+	
 ?>
+
 
 <!-- Wrapper -->
 	<div id="wrapper">
@@ -25,7 +28,8 @@
 						<div id="form_container" class=""></div>
 
 					<!-- map -->
-						<div id="map_container" class="map_container hide_opacity map full_width"></div>
+						<div id="map_container" class="map_container map full_width"></div>
+						<div id="map_container_numismatic_group" class="map_container map full_width" style="display: none;"></div>
 
 					<!-- result -->
 						<section id="rows_container" class="result rows_list"></section>
@@ -49,6 +53,7 @@ dom_ready(function(){
 		form_container			: document.getElementById('form_container'),
 		rows_container			: document.getElementById('rows_container'),
 		map_container			: document.getElementById('map_container'),
+		map_container_numismatic_group : document.getElementById('map_container_numismatic_group'),
 		export_data_container	: document.getElementById('export_data'),
 	})
 })

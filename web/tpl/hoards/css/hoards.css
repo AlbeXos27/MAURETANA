@@ -1,2 +1,538 @@
-.button_icon_simple{background-repeat:no-repeat;background-position:center center;width:1em;height:1em;cursor:pointer;background-size:contain;opacity:.7}.button_icon_simple:active{opacity:.5}.button_icon_simple:hover{opacity:1}.result .image{height:6em}@media screen and (max-width:736px){.result .image{height:8em}}.rows_container{margin-bottom:2em}.rows_container .icon_link{margin-left:.4em}.rows_container .name{font-variant:small-caps;letter-spacing:1px;font-size:130%}.rows_container .row_wrapper{border-bottom:1px solid #ddd;margin-bottom:1em;padding-top:1em;padding-left:0;padding-right:0;display:grid;grid-template-columns:1.2fr 2fr}@media screen and (max-width:625px){.rows_container .row_wrapper{display:block}}.rows_container .row_wrapper>.map_wrapper{width:100%;min-width:22rem;height:18rem;background-color:#c3e3fe;outline:1px solid #ddd}.rows_container .row_wrapper>.map_wrapper .leaflet-container{width:100%;height:100%;padding:0;margin:0}.rows_container .row_wrapper>.info_wrap{padding-left:1.5rem}.rows_container .row_wrapper>.info_wrap>.title_wrap{margin-bottom:1em}.rows_container .row_wrapper>.info_wrap>.info_text_wrap{font-weight:100;font-size:1.1rem}.rows_container .row_wrapper:last-child{border-bottom:none}
+.button_icon_simple{background-repeat:no-repeat;background-position:center center;width:1em;height:1em;cursor:pointer;background-size:contain;opacity:.7}.button_icon_simple:active{opacity:.5}.button_icon_simple:hover{opacity:1}.result .image{height:6em}@media screen and (max-width:736px){.result .image{height:8em}} .rows_container{margin-bottom:2em} .rows_container .icon_link{margin-left:.4em}.rows_container .name{font-variant:small-caps;letter-spacing:1px;font-size:130%} .row_wrapper{border-bottom:1px solid #ddd;margin-bottom:1em;padding-top:1em;padding-left:0;padding-right:0;display:grid;grid-template-columns:1.2fr 2fr}@media screen and (max-width:625px){.rows_container .row_wrapper{display:block}}.map_wrapper{width:100%;min-width:22rem;height:18rem;background-color:#c3e3fe;outline:1px solid #ddd} .map_wrapper .leaflet-container{width:100%;height:100%;padding:0;margin:0}.rows_container .row_wrapper>.info_wrap{padding-left:1.5rem}.rows_container .row_wrapper>.info_wrap>.title_wrap{margin-bottom:1em}.rows_container .row_wrapper>.info_wrap>.info_text_wrap{font-weight:100;font-size:1.1rem}.rows_container .row_wrapper:last-child{border-bottom:none}
 /*# sourceMappingURL=hoards.css.map */
+.info_wrap > span{
+    display: block;
+}
+
+#rows_container{
+    margin-bottom: 10%;
+}
+
+.grid-stack {
+   overflow: hidden !important;
+   border-radius: 10px;
+}
+
+.grid-stack-item-content  {
+    background-color: white;
+    text-align: center;
+    align-content: center;
+    border-radius: 10px;
+    inset: 10px  !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.ceca-widget {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* 👈 empieza desde arriba */
+  align-items: flex-start;     /* 👈 alineado a la izquierda */
+  height: 100%;                /* para que ocupe todo el widget */
+  width: 100%;
+}
+
+.coin-card{
+  text-align: center;
+  color: #997f5a;
+}
+
+.coin-img{
+
+  width: 200px !important;
+  height: 200px !important;
+
+}
+
+#titulo-ficha{
+    font-size: 1.5em;
+}
+#img_ident{
+    overflow-y: hidden;
+}
+
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+    -ms-touch-action: none;
+    touch-action: none;
+    border-radius: 10px !important;
+    height: 24% !important;
+    width: 32% !important;
+    margin-left: 8px;
+    margin-top: 10px;
+}
+
+
+#arbol_no_moneda{
+    text-align: start;
+    align-self: baseline;
+    text-size-adjust: auto;
+    text-transform: uppercase;
+    font-weight: bold;
+    height: 96%;
+}
+
+.title{
+margin: 0.5em 0 0.2em 0 !important;
+
+}
+
+.findspot_mobile{
+  display: none;
+}
+
+.title_mobile{
+  font-size: 1.6rem;
+  color : #9b6c29;
+  text-transform: uppercase;
+  font-weight: bold;
+  margin: 0.5rem 0 0.2rem 0 !important;
+}
+
+.mapa_mobile {
+  min-width: 95%;
+  min-height: 300px; /* asegura que nunca sea 0 */
+  height: 40vh;      /* 40% de la altura de la ventana */
+  z-index: 1;
+  align-items: center;
+  margin: 0 !important;
+}
+
+.title_info{
+  font-size: 1.2rem;
+  text-align: left;
+  text-transform: none;
+  margin: 1.5rem 0 0.2rem 0 !important;
+}
+
+.line-tittle_mid{
+  font-size: 3rem;
+}
+
+.container_title {
+  display: inline-flex;
+  align-items: baseline; /* O center, según lo que se vea mejor */
+  gap: 0.5em; /* Espacio entre texto e imagen */
+}
+.imagen {
+  height: 2.6em;        /* Escala la imagen al tamaño del texto */
+  width: auto;         /* Mantiene proporción */
+  display: inline-block; /* para que respete bien el tamaño */
+  vertical-align: middle; /* mejor que bottom para centrar */
+  transform: translateY(0.75vh);
+}
+
+.info_mobile{
+  font-size: 1.0rem;
+  text-align: left;
+  margin: 1.5rem 0 0.2rem 0 !important;
+}
+
+.bilbiografia_mobile{
+  font-size: 0.8rem;
+  text-align: left;
+  margin: 1.5rem 0 0.2rem 0 !important;
+}
+
+.autores_mobile{
+  font-size: 1.0rem;
+  text-align: left;
+  margin: 1.5rem 0 0.2rem 0 !important;
+}
+
+/*# sourceMappingURL=map.css.map */
+#wrapper .inner{
+  max-width: 100%;
+}
+
+.findspot{
+  align-self: start;
+}
+
+
+.swiper {
+  width: 60vw;
+  height: 45vh;
+  margin-top: 1rem;
+  position: relative;
+}
+
+/* Slides del carrusel */
+.swiper-slide {
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Botones de navegación */
+.swiper-button-prev,
+.swiper-button-next {
+  color: #333;
+}
+
+/* Paginación */
+.swiper-pagination {
+  bottom: 10px !important;
+}
+
+.swiper-pagination-bullet {
+  background: #333;
+  opacity: 0.6;
+}
+
+.swiper-pagination-bullet-active {
+  background: #000;
+  opacity: 1;
+}
+
+/* Responsivo opcional */
+@media screen and (max-width: 700px) {
+  .swiper {
+    width: 80vw;
+    height: 250px;
+  }
+  .info_link{
+    font-size: 20px !important;
+  }
+  /*.button_display{
+    width: 1.6rem !important;
+  }*/
+  .button_display {
+      font-size: 12px; /* Ajusta el tamaño del texto */
+      padding: 6px 10px; /* Ajusta el padding para que se vea bien */
+      text-align: center;
+      display: flex !important;   
+    }
+  .title_mobile{
+  font-size: 1.2rem;
+  }
+  .title_info{
+    font-size: 1.0rem;
+  }
+  .info_mobile{
+    font-size: 0.9rem;
+  }
+  .autores_mobile{
+    font-size: 0.95rem;
+  }
+}
+.arbol_moneda_mobile{
+  display: none;
+}
+.container_title_mobile{
+  display: none;
+}
+
+.golden-separator_mobile{
+    display: none;
+}
+@media screen and (max-width: 1100px) {
+  .grid-stack {
+   display: none;
+  }
+  .info_link{
+    font-size: 30px;
+  }
+  .findspot_mobile{
+    display: block;
+  }
+  
+  .arbol_moneda_mobile{
+  display: block;
+  }
+  .container_title_mobile{
+    display: block;
+  }
+  .title{
+    font-size: 1.6rem !important;
+    font-weight: bold;
+    margin: 1.5rem 0 0.2rem 0 !important;
+  }
+  .imagen {
+    height: 1.6em !important;        /* Escala la imagen al tamaño del texto */
+  }
+  .line-tittle_mid {
+    font-size: 1.4rem;
+  }
+  .container_prueba{
+    margin-top: 1em;
+  }
+}
+
+
+.buttons_move{
+  float: right;
+  display: flex;
+  gap: 4.5rem;
+
+}
+
+
+#atras {
+  background-image: url("../../assets/images/arrow-right.svg");
+  transform: scaleX(-1);
+  background-position: center center; /* 🔹 centra horizontal y verticalmente */
+  background-size: contain;           /* 🔹 ajusta la flecha al botón */
+  
+}
+
+#adelante {
+  background-image: url("../../assets/images/arrow-right.svg");
+  background-position: center center; /* 🔹 centra horizontal y verticalmente */
+  background-size: contain;           /* 🔹 ajusta la flecha al botón */
+}
+
+
+.flip-card {
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+/*.button_display{
+  width: 2.35rem;
+}*/
+.button_display {
+     display: inline-flex;               /* usar flex para centrar */
+    justify-content: center;    /* centrado horizontal */
+    align-items: center;        /* centrado vertical */
+    text-align: center; 
+
+    background: white;
+    border: none;
+    text-transform: bold;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: bold;
+    margin-left: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.button_display:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.button_display:active {
+    transform: translateY(1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+/* Cuando tiene la clase flipped hace el giro */
+.flip-card.flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  background-color: white ;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.flip-card-front {
+  
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.flip-card-front img {
+  max-width: 30%;
+  height: auto;
+  margin: 0 5px;
+}
+
+.flip-card-back {
+  background-color: #ffffff;
+  color: black;
+  transform: rotateY(180deg);
+  padding: 1rem;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 1rem;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  text-transform: none;
+}
+
+.type_container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0.5rem 0 0.7rem;
+}
+
+.type_link {
+  color: #9b6c29;
+  text-decoration: none;
+  font-size: 1.5rem;
+  text-align: center;
+  border-bottom: none !important;
+}
+
+.type_link:hover {
+  color: #997f5a !important;
+  border-bottom: 1px dotted #005f54 !important;
+}
+
+.descriptive_title {
+  flex: 0 0 auto;
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-left: 8px;
+  margin: 0.5rem 0;
+}
+
+.findspot_container,
+.date_container,
+.weight_container,
+.diameter_container,
+.dies_container,
+.collection_container,
+.fin_type_container,
+.section_id_container {
+  display: flex;
+  text-align: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+
+.diameter_container,
+.collection_container,
+.section_id_container {
+  border-left: 1.3px solid black;
+}
+
+.findspot_container,
+.date_container
+{
+
+  border-right: 1.3px solid black;
+  border-left: 1.3px solid black;
+  border-top: 1.3px solid black;
+
+}
+
+
+.findspot_text,
+.date_text,
+.weight_text,
+.diameter_text,
+.dies_text,
+.collection_text,
+.fin_type_text,
+.section_id_text {
+  flex: 1;
+  text-align: center;
+  font-size: 1.4rem;
+  color: black;
+  margin: 0.5rem 0;
+  word-wrap: break-word;
+}
+
+.weigdia_container,
+.dico_container,
+.finsec_container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-right: 1.3px solid black;
+  border-left: 1.3px solid black;
+  border-top: 1.3px solid black;
+}
+.finsec_container{
+  border-bottom: 1.3px solid black;
+}
+
+/* ✅ RESPONSIVE: Ajustes suaves sin escalar */
+@media (max-width: 768px) {
+  .type_link{
+    font-size: 1.2rem;
+  }
+  .descriptive_title,
+  .findspot_text,
+  .date_text,
+  .weight_text,
+  .diameter_text,
+  .dies_text,
+  .collection_text,
+  .fin_type_text,
+  .section_id_text {
+    text-align: center;
+    font-size: 1.0rem;
+    margin-top: 0.3rem !important;
+    margin-bottom: 0.3rem !important;
+    display: flex;
+    flex-direction: column;    /* Apila título y texto */
+    align-items: center;       /* Centra horizontalmente */
+    justify-content: center;
+  }
+
+  .findspot_container,
+  .date_container,
+  .weight_container,
+  .diameter_container,
+  .dies_container,
+  .collection_container,
+  .fin_type_container,
+  .section_id_container {
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .diameter_container,
+  .collection_container,
+  .section_id_container
+  {
+    border-top: 1.3px solid black;
+    border-left: none;
+  }
+  
+
+  .weigdia_container,
+  .dico_container,
+  .finsec_container {
+    grid-template-columns: 1fr; /* apila columnas en pantallas pequeñas */
+  }
+
+  .flip-card-back {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .flip-card-front img {
+  max-width: 40%;
+  height: auto;
+  margin: 0 5px;
+
+
+}
+
+
+
+
+}
+

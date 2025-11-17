@@ -594,8 +594,8 @@ page.render_type_label = function(row) {
 			class_name		: "a_term",
 			href			: page_globals.__WEB_ROOT_WEB__ + '/type/' + section_id,
 			target			: "_blank",
-			title			: page_globals.OWN_CATALOG_ACRONYM + " " + mint_number + c_name + (ar.join(", ").trim()),
-			inner_html		: page_globals.OWN_CATALOG_ACRONYM + " " + mint_number + c_name + keyword
+			title			:  /* page_globals.OWN_CATALOG_ACRONYM + " "  + */ mint_number + c_name + (ar.join(", ").trim()),
+			inner_html		: /* page_globals.OWN_CATALOG_ACRONYM + " " + */ mint_number + c_name + keyword
 		})
 		current_value = a_term.outerHTML
 	}else{

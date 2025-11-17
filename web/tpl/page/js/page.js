@@ -5,7 +5,7 @@
 /**
 * PAGE JS
 *
-*
+* hola
 */
 var page = {
 
@@ -26,8 +26,7 @@ var page = {
 			source_maps : [
 				{
 					name	: "DARE",
-					// url	: '//pelagios.org/tilesets/imperium/{z}/{x}/{y}.png',
-					url		: '//dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',
+					url		: 'https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',
 					options	: {
 						maxZoom: 11
 					},
@@ -53,6 +52,11 @@ var page = {
 				{
 					name	: "ARCGIS",
 					url		: '//server.arcgisonline.com/ArcGIS/' + 'rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+					options	: {}
+				},
+				{
+					name	: "AWMC",
+					url		: 'http://cawm.lib.uiowa.edu/tiles/{z}/{x}/{y}.png',
 					options	: {}
 				}
 			],

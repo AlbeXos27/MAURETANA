@@ -1,4 +1,4 @@
-/*global tstring, page_globals, SHOW_DEBUG, common, page, $, type_row_fields_min, map_factory, Promise, data_manager, event_manager, form_factory, catalog_row_fields */
+ /*global tstring, page_globals, SHOW_DEBUG, common, page, $, type_row_fields_min, map_factory, Promise, data_manager, event_manager, form_factory, catalog_row_fields */
 /*eslint no-undef: "error"*/
 
 "use strict";
@@ -7,7 +7,7 @@
 
 var map = {
 
-
+	
 
 	/**
 	* VARS
@@ -16,9 +16,11 @@ var map = {
 		form_container			: null,
 		rows_container			: null,
 		map_container			: null,
+		map_container_numismatic_group : null,
 		export_data_container	: null,
 
 		map_factory_instance : null,
+		map_factory_instance_numismatic_group : null,
 
 		// master_map_global_data. All records from table 'map_global'
 		master_map_global_data : null,
@@ -39,8 +41,8 @@ var map = {
 
 		map_config : null,
 
-
-
+		button_state : false,
+		WEB_ROOT_WEB : "/web",
 	/**
 	* SET_UP
 	* When the HTML page is loaded
@@ -52,104 +54,36 @@ var map = {
 		}
 
 		const self = this
-
+		
 		// options
 			self.form_container			= options.form_container
 			self.map_container			= options.map_container
 			self.rows_container			= options.rows_container
 			self.export_data_container	= options.export_data_container
+			self.map_container_numismatic_group	= options.map_container_numismatic_group
 
 		// export_data_buttons added once
 			const export_data_buttons = page.render_export_data_buttons()
 			self.export_data_container.appendChild(export_data_buttons)
 			self.export_data_container.classList.add('hide')
 
-		// map
-			self.source_maps = [
-				{
-					name	: "DARE",
-					// url	: '//pelagios.org/tilesets/imperium/{z}/{x}/{y}.png',
-					url		: '//dh.gu.se/tiles/imperium/{z}/{x}/{y}.png',
-					options	: {
-						maxZoom: 11
-					}
-				},
-				{
-					name	: "OSM",
-					url		: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-					options	: {
-						maxZoom	: 19
-					}
-				},
-				{
-					name	: 'Map Tiles',
-					// url	: 'https://api.maptiler.com/maps/basic/{z}/{x}/{y}@2x.png?key=udlBrEEE2SPm1In5dCNb', // 512 ...
-					url		: 'https://api.maptiler.com/maps/basic/256/{z}/{x}/{y}@2x.png?key=udlBrEEE2SPm1In5dCNb', // 256 ok
-					// url	: 'https://api.maptiler.com/maps/9512807c-ffd5-4ee0-9781-c354711d15e5/style.json?key=udlBrEEE2SPm1In5dCNb', // vector grey
-					options	: {
-						maxZoom	: 20
-					},
-					default	: true
-				},
-				{
-					name	: "ARCGIS",
-					url		: '//server.arcgisonline.com/ArcGIS/' + 'rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-					options	: {}
-				}
-			]
 
-			self.map_factory_instance = new map_factory() // creates / get existing instance of map
-			self.map_factory_instance.init({
-				map_container	: self.map_container,
-				map_position	: null,
-				popup_builder	: page.map_popup_builder,
-				popup_options	: page.maps_config.popup_options,
-				source_maps		: self.source_maps,
-				legend			: page.render_map_legend
-			})
+						let resultado = {
+						hallazgos: {
+							datos: []
+						},
+						cecas: {
+							datos: []
+						},
+						complejos: {
+							datos: []
+						}
+						};
 
-		// map base data from map_global
-			const request_body = {
-				dedalo_get	: 'records',
-				db_name		: page_globals.WEB_DB,
-				lang		: page_globals.WEB_CURRENT_LANG_CODE,
-				table		: 'map_global',
-				ar_fields	: '*',
-				sql_filter	: 'coins_list IS NOT NULL AND types_list IS NOT NULL AND georef_geojson IS NOT NULL',
-				limit		: 0,
-				count		: false,
-				offset		: 0,
-				order		: null
-			}
-			data_manager.request({
-				body : request_body
-			})
-			.then((response)=>{
-				// console.log("--- search_rows API response:", response);
 
-				if (response.result) {
 
-					// master_map_global_data. fix parsed var master_map_global_data to reuse later
-						self.master_map_global_data = page.parse_map_global_data(response.result)
+		this.cargarTodoYCrearMapa(resultado,"");
 
-					// current_map_global_data
-						self.current_map_global_data = self.master_map_global_data
-
-					// clean empty geolocation items
-						const map_points = self.current_map_global_data.filter(function(el){return el.item!==null}).map(function(el){
-							return el.item
-						})
-
-					// initial map with all points without filters
-						self.map_factory_instance.parse_data_to_map(map_points)
-						.then(function(){
-							self.map_container.classList.remove('hide_opacity')
-						})
-				}
-
-				// event
-				event_manager.publish('initial_map_loaded')
-			})
 
 		// form
 			self.form		= new form_factory()
@@ -182,75 +116,78 @@ var map = {
 			}
 
 		// events
-			event_manager.subscribe('map_selected_marker', map_selected_marker)
-			function map_selected_marker(options){
-				// console.log("///-> map_selected_marker options:",options);
-
-				// options
-					const selected_element = typeof options.item.group[0]!=="undefined"
-						? options.item.group[0]
-						: null
-
-				// check selected_element
-					if (!selected_element) {
-						return null
-					}
-
-				// clean container
-					while (self.rows_container.hasChildNodes()) {
-						self.rows_container.removeChild(self.rows_container.lastChild);
-					}
-					// page.add_spinner(self.rows_container)
-					const spinner = common.create_dom_element({
-						element_type	: "div",
-						class_name		: "spinner",
-						parent			: self.rows_container
-					})
-
-				// render related types list
-					// resolved map_global_data
-						const map_global_data = self.current_map_global_data.find(function(el){
-							return el.section_id==selected_element.term_id
-						})
-					// load_map_selection_info
-					self.load_map_selection_info(selected_element, map_global_data)
-					.then(function(response){
-						// console.log("--> load_map_selection_info response:",response);
-						if (response) {
-							const types_list_node = self.render_types_list({
-								global_data_item	: response.global_data_item,
-								types_rows			: response.types_rows,
-								coins_rows			: response.coins_rows,
-								info				: response.info
-							})
-							self.rows_container.appendChild(types_list_node)
-							// page.remove_spinner(self.rows_container)
-							spinner.remove()
-
-							// activate images lightbox
-								setTimeout(function(){
-									const images_gallery_containers = self.rows_container
-									page.activate_images_gallery(images_gallery_containers, true)
-								},600)
-
-						}else{
-							// page.remove_spinner(self.rows_container)
-							spinner.remove()
-						}
-
-						// scroll map at top
-							self.map_container.scrollIntoView({behavior: "smooth", block: "start", inline: "nearest"})
-
-						// show export buttons
-							self.export_data_container.classList.remove('hide')
-					})
-
-				return true
-			}//end map_selected_marker
+		
 
 
 		return true
 	},//end set_up
+
+
+
+	
+cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
+	const self = this
+	try {
+		const hallazgos = await data_manager.request({
+			body: {
+				dedalo_get: 'records',
+				table: 'findspots',
+				ar_fields: ["*"],
+				sql_filter: sql_filter == "" ? 'typology != ""' : sql_filter + ' AND typology != ""',
+				limit: 0,
+				count: true,
+				offset: 0,
+				order: 'section_id ASC',
+				process_result: null
+			}
+		});
+		resultado.hallazgos.datos = hallazgos.result;
+
+		const cecas = await data_manager.request({
+			body: {
+				dedalo_get: 'records',
+				table: 'mints',
+				ar_fields: ["*"],
+				sql_filter: sql_filter,
+				limit: 0,
+				count: true,
+				offset: 0,
+				order: 'name',
+				process_result: null
+			}
+		});
+		resultado.cecas.datos = cecas.result;
+
+
+		const complejos = await data_manager.request({
+			body: {
+				dedalo_get: 'records',
+				table: 'hoards',
+				ar_fields: ["*"],
+				sql_filter: sql_filter,
+				limit: 0,
+				count: true,
+				offset: 0,
+				order: 'name',
+				process_result: null
+			}
+		});
+		resultado.complejos.datos = complejos.result;
+
+
+		self.map_factory_instance = new map_factory();
+		self.map_factory_instance.init({
+			map_container: self.map_container,
+			map_position: location ? [location.lat,location.lon] : [36.5297, -6.2924],
+			source_maps: page.maps_config.source_maps,
+			result: resultado,
+			map_node : this,
+			DEV_MODE :	true
+		});
+	} catch (error) {
+		console.error("Error cargando datos:", error);
+	}
+},
 
 
 
@@ -330,24 +267,23 @@ var map = {
 				id				: "mint",
 				name			: "mint",
 				label			: tstring.mint || "mint",
-				q_column		: "mint",
+				q_column		: "name",
 				value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
-				eq				: "LIKE",
-				eq_in			: "%",
-				eq_out			: "%",
+				sql_filter		: ` name LIKE '%%' AND name !='' `	, 
 				is_term			: true,
 				q_selected_eq	: "LIKE",
 				parent			: form_row,
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'coins'
+						table		: 'mints',
+						activate_filter : false
 					})
 				}
 			})
 
 		// collection
-			self.form.item_factory({
+		/* 	self.form.item_factory({
 				id			: "collection",
 				name		: "collection",
 				label		: tstring.collection || "collection",
@@ -362,7 +298,7 @@ var map = {
 						table		: 'coins'
 					})
 				}
-			})
+			}) */
 
 		// // ref_auction
 		// 	self.form.item_factory({
@@ -389,154 +325,64 @@ var map = {
 				id			: "findspot",
 				name		: "findspot",
 				label		: tstring.findspot || "findspot",
-				q_column	: "findspot",
-				eq			: "LIKE",
-				eq_in		: "%",
-				eq_out		: "%",
+				q_column	: "name",
+				sql_filter	: ` name LIKE '%%' AND name !='' `, // FILTRO PARA CECAS AUNQUE SEA HALLAZGOS ESTA BUGGED NO SE PORQUE?
+				q_selected_eq	: "LIKE",
 				parent		: form_row,
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'coins'
+						table		: 'findspots',
+						parent_in   : true,
+						activate_filter : false
 					})
 				}
 			})
 
 		// hoard
 			self.form.item_factory({
-				id			: "hoard",
-				name		: "hoard",
-				label		: tstring.hoard || "hoard",
-				q_column	: "hoard",
-				eq			: "LIKE",
-				eq_in		: "%",
-				eq_out		: "%",
-				parent		: form_row,
-				callback	: function(form_item) {
+				id				: "hoard",
+				name			: "hoard",
+				label			: tstring.hoard || "hoard",
+				q_column		: "name",
+				value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
+				sql_filter		: ` name LIKE '%%' AND name !='' `	, // FILTRO PARA HALLAZGOS ESTA BUGGED NO SE PORQUE?
+				q_selected_eq	: "LIKE",
+				parent			: form_row,
+				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'coins'
+						table		: 'hoards',
+						parent_in		: true,
+						activate_filter : false
 					})
 				}
 			})
 
-		// material
+		// catalog
 			self.form.item_factory({
-				id			: "material",
-				name		: "material",
-				label		: tstring.material || "Material",
-				q_column	: "material",
-				eq			: "LIKE",
-				eq_in		: "%",
-				eq_out		: "%",
+				id			: "catalog",
+				name		: "catalog",
+				label		: "Grupo Numismatico",
+				q_column		: "term",
+				value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
+				sql_filter		: ` term LIKE '%%' AND term !='' `	, 
+				q_selected_eq	: "LIKE",		
 				parent		: form_row,
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'coins'
+						table		: 'catalog',
+						id			: false,
+						activate_filter : false
 					})
 				}
 			})
+			
 
-		// denomination
-			self.form.item_factory({
-				id			: "denomination",
-				name		: "denomination",
-				label		: tstring.denomination || "Denomination",
-				q_column	: "denomination",
-				eq			: "LIKE",
-				eq_in		: "%",
-				eq_out		: "%",
-				parent		: form_row,
-				callback	: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'coins'
-					})
-				}
-			})
+			
+			self.observeAllContainers(form_row,self,1)
 
-		// range slider date (range_slider)
-			self.form.item_factory({
-				id			: "range_slider",
-				name		: "range_slider",
-				input_type	: 'range_slider',
-				label		: tstring.dating || "Dating",
-				class_name	: 'range_slider',
-				q_column	: "date_in,dating_end",
-				// eq		: "LIKE",
-				// eq_in	: "",
-				// eq_out	: "%",
-				// q_table	: "catalog",
-				sql_filter	: null,
-				parent		: form_row,
-				callback	: function(form_item) {
-
-					// const form_item				= this
-					const node_input				= form_item.node_input
-					const range_slider_value_in		= node_input.parentNode.querySelector('#range_slider_in')
-					const range_slider_value_out	= node_input.parentNode.querySelector('#range_slider_out')
-
-					function set_up_slider() {
-
-						// compute range years
-						self.get_range_years()
-						.then(function(range_data){
-							// console.log("range_data:",range_data);
-
-							// destroy current slider instance if already exists
-								if ($(node_input).slider("instance")) {
-									$(node_input).slider("destroy")
-								}
-
-							// reset filter
-								form_item.sql_filter = null
-
-							// set inputs values from database
-								range_slider_value_in.value	= range_data.min
-								range_slider_value_in.addEventListener("change",function(e){
-									const value = (e.target.value>=range_data.min)
-										? e.target.value
-										: range_data.min
-									$(node_input).slider( "values", 0, value );
-									e.target.value = value
-								})
-								range_slider_value_out.value = range_data.max
-								range_slider_value_out.addEventListener("change",function(e){
-									const value = (e.target.value<=range_data.max)
-										? e.target.value
-										: range_data.max
-									$(node_input).slider( "values", 1, e.target.value );
-									e.target.value = value
-								})
-
-							// active jquery slider
-								$(node_input).slider({
-									range	: true,
-									min		: range_data.min,
-									max		: range_data.max,
-									step	: 1,
-									values	: [ range_data.min, range_data.max ],
-									slide	: function( event, ui ) {
-										// update input values on user drag slide points
-										range_slider_value_in.value	 = ui.values[0]
-										range_slider_value_out.value = ui.values[1]
-										// console.warn("-----> slide range form_item.sql_filter:",form_item.sql_filter);
-									},
-									change: function( event, ui ) {
-										// update form_item sql_filter value on every slider change
-										form_item.sql_filter = "(date_in >= " + ui.values[0] + " AND date_in <= "+ui.values[1]+")"; // AND (dating_end <= " + ui.values[1] + " OR dating_end IS NULL)
-										form_item.q = ui.value
-										// console.warn("-----> change range form_item.sql_filter:", form_item.sql_filter);
-									}
-								});
-						})
-					}
-
-					// initial_map_loaded event (triggered on initial map data is ready)
-					event_manager.subscribe('initial_map_loaded', set_up_slider)
-				}
-			})
 
 		// submit button
 			const submit_group = common.create_dom_element({
@@ -573,7 +419,99 @@ var map = {
 
 
 		return self.form.node
+
 	},//end render_form
+
+	// Función que conecta el observer al último container_values
+	observeAllContainers: function (form_row, self, id) {
+    let observers = [];
+
+    const connectToContainer = (container) => {
+        const obs = new MutationObserver(async (mutationsList) => {
+            for (let mutation of mutationsList) {
+                if (mutation.type === 'childList') {
+                    if (container.children.length > 0) {
+                        const lastValueLabel = container.lastElementChild.querySelector('.value_label').textContent;
+						
+						await data_manager.request({
+							body : {
+								dedalo_get	: 'records',
+								table		: "catalog",
+								ar_fields	: ["*"],
+								sql_filter	: `term LIKE "%${lastValueLabel}%"`,
+								limit		: 0
+							}
+							
+							}).then((api_response) => { 
+
+								if(api_response.result[0].children != null){
+
+									self.form.item_factory({
+										id: "catalog" + id,
+										name: "catalog" + id,
+										label: lastValueLabel,
+										q_column: "term",
+										value_wrapper: ['["', '"]'],
+										sql_filter: ` term LIKE '%%' AND term !='' `,
+										q_selected_eq: "LIKE",
+										parent: form_row,
+										callback: function(form_item) {
+											self.form.activate_autocomplete({
+												form_item: form_item,
+												table: 'catalog',
+												id	: true,
+												label : lastValueLabel
+											});
+										}
+									});
+
+								id++;
+								}
+
+							})
+
+                    } else {
+                        let next = container.parentNode.nextElementSibling;
+                        while (next) {
+                            let toRemove = next;
+                            next = next.nextElementSibling;
+                            toRemove.remove();
+                            id--;
+                        }
+
+                    }
+                }
+            }
+        });
+
+        obs.observe(container, { childList: true });
+        observers.push(obs);
+    };
+
+    const parentObserver = new MutationObserver(() => {
+        const containers = form_row.querySelectorAll('.container_values');
+        observers.forEach(o => o.disconnect()); // limpia anteriores
+        observers = [];
+
+        containers.forEach(container => {
+            if (container.previousElementSibling.id && container.previousElementSibling.id.includes("catalog")) {
+                connectToContainer(container);
+            }
+        });
+    });
+
+    parentObserver.observe(form_row, { childList: true });
+
+    form_row.querySelectorAll('.container_values').forEach(container => {
+        if (container.previousElementSibling.id && container.previousElementSibling.id.includes("catalog")) {
+            connectToContainer(container);
+        }
+    });
+},
+
+
+
+
 
 
 
@@ -603,21 +541,22 @@ var map = {
 			// }else{
 			// 	rows_container.classList.add("loading")
 			// }
-			self.map_container.classList.add("loading")
 
 		return new Promise(function(resolve){
 
-			const ar_fields = ['section_id','mint_data','hoard_data','findspot_data','type_data']
+			const ar_fields = ["*"]
 
 			// sql_filter
-				const filter = self.form.build_filter()
 
+				const filter = self.form.build_filter()
+				//console.log(self.form.form_items) // -----IMPORTANTE-----
 				// parse_sql_filter
 				const group			= []
-				const parsed_filter	= self.form.parse_sql_filter(filter, group)
+				const parsed_filter	= self.form.parse_sql_filter(filter, group,false)
 				const sql_filter	= parsed_filter
 					? '(' + parsed_filter + ')'
 					: null
+
 				if(SHOW_DEBUG===true) {
 					// console.log("-> coins form_submit filter:",filter);
 					// console.log("-> coins form_submit sql_filter:",sql_filter);
@@ -631,534 +570,1112 @@ var map = {
 				// 	})
 				// }
 
+
+				let table = null
+				let q = ""
+				let q_selected = ""
+				let label = "name"
+				let tam_form_items = Object.keys(self.form.form_items)
+  						.filter(k => k.startsWith("catalog") && self.form.form_items[k].q_selected.length > 0 || self.form.form_items.mint.q !== "");
+				
+				console.log(self.form.form_items)
+
+			if(self.form.form_items.mint.q !== "" || self.form.form_items.mint.q_selected.length > 0){
+
+				table = "mints"
+				q = self.form.form_items.mint.q
+				q_selected = self.form.form_items.mint.q_selected
+
+			}else{
+
+				if(self.form.form_items.findspot.q !== "" || self.form.form_items.findspot.q_selected.length > 0){
+
+				table = "findspots"
+				q = self.form.form_items.findspot.q
+				q_selected = self.form.form_items.findspot.q_selected
+
+
+				
+				}else{
+
+					if(self.form.form_items.hoard.q !== "" || self.form.form_items.hoard.q_selected.length > 0){
+
+						table = "hoards"
+						q = self.form.form_items.hoard.q
+						q_selected = self.form.form_items.hoard.q_selected
+
+					}else{
+
+						if(self.form.form_items.catalog.q !== "" || self.form.form_items.catalog.q_selected.length > 0){
+
+							table = "catalog"
+							q = self.form.form_items[tam_form_items[tam_form_items.length-1]].q
+							q_selected = self.form.form_items[tam_form_items[tam_form_items.length-1]].q_selected
+							label = "parents_text"
+
+						}
+
+					}
+
+				}
+
+			}
+
+			
+
+			let sql_filter_final = ` ${label} LIKE '%${q !== '' ? q : q_selected}%' AND ${label} !=''`
+
+			// HACER LLAMADA A API CON DATA_MANAGER.REQUEST CON EL CAMPO MINT DE LA TABLA COINS -> NOMBRE DE LA CECA PARA RECOGER MONEDA
+
+			let resultado = {
+
+							hallazgos: {
+								datos: []
+							},
+							cecas: {
+								datos: []
+							},
+							complejos: {
+								datos: []
+							}
+
+						};
+
+
+			if(table){
 			data_manager.request({
 				body : {
 					dedalo_get		: 'records',
-					table			: 'coins',
+					table			: table,
 					ar_fields		: ar_fields,
-					sql_filter		: sql_filter + " AND type_data IS NOT NULL",
+					sql_filter		: table != "catalog" ? sql_filter_final : sql_filter_final + " AND coin_references != '' ",
 					limit			: 0,
-					count			: false,
+					count			: true,
 					offset			: 0,
 					order			: 'section_id ASC',
 					// group		: "type_data",
 					process_result	: null
 				}
 			})
-			.then(function(api_response){
-				// console.log("--------------- form_submit api_response:", api_response);
+			.then(async function(api_response){
+
+				const location = {
+						lon: null,
+						lat: null
+					};
 
 				if (api_response.result) {
+					
+					if(table == "catalog"){
+						const set_monedas = new Set()
+						for (let index = 0; index < api_response.result.length; index++) {
+							const coins  = JSON.parse(api_response.result[index].coin_references)
 
-					self.current_map_global_data = self.distribute_coins(api_response.result)
-						// console.log("self.current_map_global_data:",self.current_map_global_data);
+							for (let coin = 0 ; coin < coins.length ; coin++ ){
+								set_monedas.add(coins[coin])
+							}
 
-					// fix
-						// self.map_global_data = self.current_map_global_data
-						// console.log("self.current_map_global_data:",self.current_map_global_data);
+							
+						}
+						
+						
+						let filtro = ""
+						const valores = Array.from(set_monedas);
+						for (let index = 0; index < valores.length; index++) {
 
-					// select geolocation items
-						const map_points = self.current_map_global_data.map(function(el){
-							return el.item
-						})
+							filtro += (index !== 0 ? " OR " : "") + ` section_id = ${valores[index]}`;
+							
+						}
 
-					// render map again
-						self.map_factory_instance.init({
-							map_container	: self.map_container,
-							map_position	: null,
-							popup_builder	: page.map_popup_builder,
-							popup_options	: page.maps_config.popup_options,
-							source_maps		: self.source_maps,
-							legend			: page.render_map_legend
-						})
-						self.map_factory_instance.parse_data_to_map(map_points, null)
+						const elementosgruponumismatico = await self.cargarElementosGrupoNumismatico(filtro);
+
+						resultado.cecas.datos = elementosgruponumismatico[0];
+						resultado.hallazgos.datos = elementosgruponumismatico[1];
+						let data_ceca_lat = 0
+						let data_ceca_lon = 0
+
+	
+
+
+						for (let index = 0; index < resultado.cecas.datos.length; index++) {
+
+							const data_ceca = JSON.parse(resultado.cecas.datos[index].map);
+
+							if (data_ceca && typeof data_ceca === 'object') {
+
+								console.log(data_ceca.lat, data_ceca.lon);
+
+								if (data_ceca.lat != null && data_ceca.lon != null) {
+								data_ceca_lat += data_ceca.lat;
+								data_ceca_lon += data_ceca.lon;
+								}
+
+							}
+
+						}
+
+						data_ceca_lat = data_ceca_lat/resultado.cecas.datos.length;
+						data_ceca_lon = data_ceca_lon/resultado.cecas.datos.length;
+						
+						if (document.getElementById("map_container_numismatic_group").hasChildNodes()) {
+							document.getElementById("map_container_numismatic_group").innerHTML = "";
+						}
+
+						// Destruir instancia previa si existe
+						if (self.map_factory_instance_numismatic_group) {
+							self.map_factory_instance_numismatic_group.map.remove();
+						}
+
+
+						self.map_factory_instance_numismatic_group = new map_factory();
+						self.map_factory_instance_numismatic_group.init({
+							map_container: self.map_container_numismatic_group,
+							map_position: [data_ceca_lat, data_ceca_lon],
+							source_maps: page.maps_config.source_maps,
+							result: resultado,
+							map_node : self,
+							zoom	 : 6,
+							DEV_MODE :	true
+						});
+
+						self.map_container_numismatic_group.style.display = "block";
+						self.map_container.style.display = "none";	
+						self.map_container_numismatic_group.classList.remove("loading")
+
+					}else{
+
+						const datos_location = JSON.parse(api_response.result[0].map)
+						location.lat = datos_location.lat;
+						location.lon = datos_location.lon;
+
+						
+
+						
+						if(api_response.result[0].table == "mints"){
+
+							const monedas_cecas = await self.cargarMonedasCecas(api_response.result[0].name);
+							await self.render_rows(api_response.result[0],monedas_cecas.result);
+						}
+						if(api_response.result[0].table == "findspots"){
+							const monedas_hallazgos = await self.cargarMonedasHallazgos(api_response.result[0].name);
+							await self.render_rows(api_response.result[0],monedas_hallazgos.result);
+					
+						}
+						if(api_response.result[0].table == "hoards"){
+							const monedas_complejos = await self.cargarMonedasComplejos(api_response.result[0].name);
+							await self.render_rows(api_response.result[0],monedas_complejos.result) ;
+						}
+						
+						if (self.map_factory_instance) {
+							self.map_factory_instance.map.remove();
+						}
+						
+						self.cargarTodoYCrearMapa(resultado,sql_filter_final,location)
+						
+						self.map_container.style.display = "block";
+						self.map_container_numismatic_group.style.display = "none";
+
+					}
+
+					self.map_container.classList.remove("loading")
+					
+				}
+				
+				resolve(true)
+			})}else{
+
+				if (self.map_factory_instance) {
+					self.map_factory_instance.map.remove();
 				}
 
-				// loading ends
-					self.map_container.classList.remove("loading")
+				self.cargarTodoYCrearMapa(resultado,"",null)
 
-				resolve(true)
-			})
+				self.map_container.style.display = "block";
+				self.map_container_numismatic_group.style.display = "none";
+
+			}
 		})
 	},//end form_submit
 
+	cargarMonedasCecas : async function(ceca) {
+		try {
+			const monedas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'coins',
+					ar_fields: ["*"],
+					sql_filter: `mint_name LIKE '%${ceca}%'`,
+					limit: 15,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
+				}
+			});
+			return monedas;
 
-
-	/**
-	* DISTRIBUTE_coins
-	* Re-built the map_global_data using given coins
-	* @return
-	*/
-	distribute_coins : function(coin_rows) {
-
-		const self = this
-
-		if (!coin_rows) {
-			return false
+		} catch (error) {
+			console.error("Error cargando datos:", error);
 		}
+	},
 
-		const new_map_global_data = []
-		const master_map_global_data_len = self.master_map_global_data.length
-		for (let i = 0; i < master_map_global_data_len; i++) {
+	cargarElementosGrupoNumismatico: async function(sql_filter) {
 
-			const map_row = self.master_map_global_data[i]
+		try {
 
-			let found_coins = []
-			switch(map_row.table) {
-				case 'mints':
-					found_coins = coin_rows.filter(function(el){
-						// return '["'+map_row.ref_section_id+'"]'==el.mint_data
-						// allow array with more than one value too like ["65","66"]
-						return el.mint_data && el.mint_data.indexOf('"'+map_row.ref_section_id+'"')!==-1
-					})
-					break;
-				case 'hoards':
-					found_coins = coin_rows.filter(function(el){
-						return '["'+map_row.ref_section_id+'"]'==el.hoard_data
-					})
-					break;
-				case 'findspots':
-					found_coins = coin_rows.filter(function(el){
-						return '["'+map_row.ref_section_id+'"]'==el.findspot_data
-					})
-					break;
+			const monedas_filtradas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'coins',
+					ar_fields: ["mint_data","findspot_data"],
+					sql_filter: sql_filter,
+					limit: 0,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
+				}
+			
+			});
+	
+			let filtro_cecas = ""
+			const set_cecas = new Set()
+			let filtro_hallazgos = ""
+			const set_hallazgos = new Set()
+
+			
+			for (let index = 0; index < monedas_filtradas.result.length; index++) {				
+
+				let array_aux = monedas_filtradas.result[index].mint_data.split(" | ")
+				
+				array_aux.forEach(item => {
+					item = item.trim(); // eliminar espacios
+					if (item.startsWith("[")) {
+						// es un array en formato string, lo parseamos
+						const parsed = JSON.parse(item);
+						parsed.forEach(val => set_cecas.add(val));
+					} else {
+						set_cecas.add(item);
+					}
+				});
+
+				const hallazgo = JSON.parse(monedas_filtradas.result[index].findspot_data);
+
+				if (Array.isArray(hallazgo) && hallazgo != null) {
+					hallazgo.forEach(val => set_hallazgos.add(val));
+				} else {
+					set_hallazgos.add(hallazgo);
+				}
+			
 			}
 
-			if (found_coins.length<1) continue; // ignore
+			set_cecas.delete(null)
+			set_hallazgos.delete(null)
 
-			// coins_list
-				const coins_list = found_coins.map(function(el){
-					return el.section_id
-				})
 
-			// get types
-				const types_list = []
-				for (let k = 0; k < found_coins.length; k++) {
-					const type_data = found_coins[k].type_data
-						? JSON.parse(found_coins[k].type_data)
-						: null
-					if ( type_data && types_list.indexOf(type_data[0])===-1 ) {
-						types_list.push(type_data[0])
-					}
+			const array_cecas = Array.from(set_cecas)
+			const array_hallazgos = Array.from(set_hallazgos)
+
+			let filtro = ""
+
+			for (let index = 0; index < array_cecas.length; index++) {
+
+				filtro += (index !== 0 ? " OR " : "") + ` section_id = ${array_cecas[index]}`;
+							
+			}
+
+
+			const cecas_filtradas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'mints',
+					ar_fields: ["*"],
+					sql_filter: filtro + " AND map IS NOT NULL",
+					limit: 0,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
 				}
-				// console.log("coins_list:", coins_list);
-				// console.log("types_list:", types_list);
+			
+			});
 
-			// recreate row
-				const new_row = JSON.parse( JSON.stringify(map_row) )
-					  new_row.coins_list = coins_list
-					  new_row.types_list = types_list
 
-				const coins_list_total = new_row.coins_list ? new_row.coins_list.length : 0;
-				const types_list_total = new_row.types_list ? new_row.types_list.length : 0;
+			filtro = ""
 
-				// item data update
-					const description = (tstring.coins || 'Coins') + ': ' + coins_list_total +'<br>'+ (tstring.types || 'Types') + ': ' + types_list_total
-					new_row.item.data.coins_total = coins_list_total
-					new_row.item.data.types_total = types_list_total
-					new_row.item.data.description = description
+			for (let index = 0; index < array_hallazgos.length; index++) {
 
-			// const new_row2 = page.parse_map_global_data([new_row])[0]
+				filtro += (index !== 0 ? " OR " : "") + ` section_id = ${array_hallazgos[index]}`;
+							
+			}
 
-			// add cloned and updated row
-				new_map_global_data.push(new_row)
+			const hallazgos_filtradas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'findspots',
+					ar_fields: ["*"],
+					sql_filter: filtro + " AND map IS NOT NULL",
+					limit: 0,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
+				}
+			
+			});
 
+			return [cecas_filtradas.result,hallazgos_filtradas.result]
+
+		} catch (error) {
+			console.error("Error cargando datos:", error);
 		}
-		// console.log("new_map_global_data:",new_map_global_data);
 
-		return new_map_global_data
-	},//end distribute_coins
+	},
 
-
-
-	/**
-	* LOAD_MAP_SELECTION_INFO
-	* @param object item (database row)
-	* @param object global_data_item
-	* 	mint-findspot-hoard row data
-	* @return promise
-	*/
-	load_map_selection_info : function(item, global_data_item) {
-
-		// const self = this
-
-		return new Promise(function(resolve){
-
-			// mint-findspot-hoard row data
-				if (!global_data_item || !global_data_item.types_list || global_data_item.types_list.length<1) {
-					console.warn("Ignored invalid item. Not found item or item.types_list in global_data! ", item.name, item);
-					resolve(false)
-					return false;
+	cargarMonedasHallazgos : async function(ceca) {
+		try {
+			const monedas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'coins',
+					ar_fields: ["*"],
+					sql_filter: `findspot LIKE '%${ceca}%'`,
+					limit: 15,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
 				}
-				const coins_list	= global_data_item.coins_list || []
-				const types_list	= global_data_item.types_list || []
+			});
+			return monedas;
 
-			const ar_calls = []
-
-			// search types in catalog using types list
-				const ar_type_id = types_list.map(function(item){
-					return '\'["' + item + '"]\''
-				})
-				const sql_filter = 'term_table=\'types\' AND term_data IN(' + ar_type_id.join(",") + ') AND coin_references IS NOT NULL'
-
-				const catalog_ar_fields = ['*']
-
-				const catalog_request_options = {
-					dedalo_get	: 'records',
-					db_name		: page_globals.WEB_DB,
-					lang		: page_globals.WEB_CURRENT_LANG_CODE,
-					table		: 'catalog',
-					ar_fields	: catalog_ar_fields,
-					sql_filter	: sql_filter,
-					limit		: 0,
-					count		: false,
-					offset		: 0,
-					order		: "term ASC"
+		} catch (error) {
+			console.error("Error cargando datos:", error);
+		}
+	},
+	cargarMonedasComplejos : async function(complejo) {
+		try {
+			const monedas = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'coins',
+					ar_fields: ["*"],
+					sql_filter: `hoard LIKE '%${complejo}%'`,
+					limit: 15,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
 				}
-				ar_calls.push({
-					id		: 'catalog_request',
-					options	: catalog_request_options
-				})
+			});
+			return monedas;
 
-			// search coins
-				const coins_request_options = {
-					dedalo_get	: 'records',
-					db_name		: page_globals.WEB_DB,
-					lang		: page_globals.WEB_CURRENT_LANG_CODE,
-					table		: 'coins',
-					ar_fields	: ['*'],
-					sql_filter	: 'section_id IN(' + coins_list.join(",") + ')',
-					limit		: 0,
-					count		: false,
-					offset		: 0,
-					order		: null,
-					resolve_portals_custom	: {
-						"bibliography_data" : "bibliographic_references"
-					}
+		} catch (error) {
+			console.error("Error cargando datos:", error);
+		}
+	},
+	cargarHijosHallazgos : async function(hallazgo) {
+		try {
+			const hijos = await data_manager.request({
+				body: {
+					dedalo_get: 'records',
+					table: 'findspots',
+					ar_fields: ["*"],
+					sql_filter: `parents LIKE '%"${hallazgo}"%'`,
+					limit: 0,
+					count: true,
+					offset: 0,
+					order: 'section_id ASC',
+					process_result: null
 				}
-				ar_calls.push({
-					id		: 'coins_request',
-					options	: coins_request_options
-				})
+			});
+			return hijos;
 
-			// request
-				data_manager.request({
-					body : {
-						dedalo_get	: 'combi',
-						ar_calls	: ar_calls
-					}
-				})
-				.then((api_response)=>{
-					// console.log("-> load_map_selection_info api_response:", api_response);
+		} catch (error) {
+			console.error("Error cargando datos:", error);
+		}
+	},
+	createfindspot_Tree : async function (findspot){
 
-					if (!api_response.result) {
-						console.warn("-> load_map_selection_info api_response:", api_response);
-						resolve(false)
-						return false
-					}
+		const findspots_tree = []
+		const findspot_sons = await this.cargarHijosHallazgos(findspot.section_id)
+		findspots_tree.push({info_nodo: findspot, padre : null})
 
-					const catalog_response = api_response.result.find(function(el){
-						return el.id==='catalog_request'
-					})
-					const types_rows = page.parse_catalog_data(catalog_response.result)
+		for (let index = 0; index < findspot_sons.result.length; index++) {
 
-					const coins_response = api_response.result.find(function(el){
-						return el.id==='coins_request'
-					})
-					const coins_rows = page.parse_coin_data(coins_response.result)
+			const parent_node = JSON.parse(findspot_sons.result[index].parents)
+			findspots_tree.push({ info_nodo: findspot_sons.result[index], padre: parent_node[0]});
+						
+		}
 
-					// verify
-						// console.log("GLOBAL_MAP: coins_list:",coins_list);
-						// console.log("COINS: coins_rows:",coins_rows );
+		return findspots_tree
 
-					// send event data_request_done (used by buttons download)
-						event_manager.publish('data_request_done', {
-							request_body		: null,
-							result				: {
-								catalog	: types_rows,
-								coins	: coins_rows,
-								map_item : {
-									coins_list : coins_list,
-									types_list : types_list
-								}
-							},
-							export_data_parser	: page.export_parse_map_data
-						})
-
-					resolve({
-						global_data_item	: global_data_item,
-						types_rows			: types_rows,
-						coins_rows			: coins_rows,
-						info				: {
-							coins_list : coins_list,
-							types_list : types_list
-						}
-					})
-				})
+	},
+	generate_Tree : async function(tree,node,node_parent,padding,font_Size){
+		
+	
+		const info_node = common.create_dom_element({
+					element_type	: "div",
+					class_name		: "container_prueba",
+					parent			: node_parent
 		})
-	},//end load_map_selection_info
+
+		const link_node = common.create_dom_element({
+					element_type: "a",
+					class_name: "info_link",
+					text_content: node.info_nodo.name,
+					href: this.WEB_ROOT_WEB+`/findspot/${node.info_nodo.section_id}`,
+					parent: info_node
+		});
+
+		const font_size = 1.5;   // Tamaño en rem
+
+		info_node.style.paddingLeft = `${padding}em`;
+		link_node.style.fontSize = `${font_size}rem`;
+		link_node.style.textTransform = "uppercase";
+		link_node.style.fontWeight = "bold";
+
+		if(node.info_nodo.coins != null){
+						const coins = await this.cargarMonedasHallazgos(node.info_nodo.name)
+						const container_rows = common.create_dom_element({
+							element_type	: "div",
+							class_name		: "container_rows",
+							parent			: info_node
+						})
+						container_rows.style.paddingLeft = `${1}em`
+						this.generate_rows_findspot(container_rows,coins.result)
+		}
+
+
+		if(node.info_nodo.children != null){
+
+				for (let index = 0; index < tree.length; index++) {
+				if (tree[index].info_nodo.parent == '["'+node.info_nodo.section_id+'"]') {
+					
+					tree[index].padre = "'"+node.info_nodo.section_id+"'"
+					await this.generate_Tree(tree,tree[index],info_node,1.5,1.3)
+				}
+				
+			}
+		}
+
+	},
+
+
+/*  */
+
+	generate_rows_findspot : function(parent,coins){
+			for (let index = 0; index < coins.length; index++) {
+			
+			const info_coin = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "info_coin",
+				parent			: parent
+			})
+
+			const container_images = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_images",
+				parent			: info_coin
+			})
+			const parsedCoinData = coins[index];
+			const image_obverse = "https://wondercoins.uca.es" + (parsedCoinData.image_obverse != null ? parsedCoinData.image_obverse : "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg")
+			common.create_dom_element({
+				element_type	: "img",
+				class_name		: "img_observe",
+				src				: image_obverse,
+				parent			: container_images
+			})
+			const image_reverse = "https://wondercoins.uca.es" + (parsedCoinData.image_obverse != null ? parsedCoinData.image_obverse : "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg")
+			common.create_dom_element({
+				element_type	: "img",
+				class_name		: "img_reserve",
+				src				: image_reverse,
+				parent			: container_images
+			})
+			const container_data = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_data",
+				parent			: info_coin
+			})
+			
+			let weight_text = null
+			if(coins[index].weight != null){
+				weight_text = "Peso: " + coins[index].weight +"g"
+			}else{
+				weight_text= "Peso: N/A"
+			}
+
+			const weight = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "weight",
+				text_content	: weight_text,
+				parent			: container_data
+			})
+			const diameter = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "diameter",
+				text_content	: "Módulo: "+ coins[index].diameter +"mm" ,
+				parent			: container_data
+			})
+
+			const catalogue_type = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "catalogue_type",
+				text_content	: "Colección: "+ coins[index].collection ,
+				parent			: container_data
+			})
+
+			let findspot_text = coins[index].findspot.split(" | ")[0]
+			const findspot = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "findspot",
+				text_content	:  "Hallazgo: "+ findspot_text,
+				parent			: info_coin
+			})
+
+			const tipo = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "type",
+				text_content	:  "Tipo: "+ coins[index].type_full_value,
+				parent			: info_coin
+			})
+
+			const container_links = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_links",
+				parent			: info_coin
+			})
+
+			const type_link = common.create_dom_element({
+				element_type	: "a",
+				class_name		: "type_link",
+				href			: this.WEB_ROOT_WEB+"/type/"+ coins[index].type,
+				text_content	: "TIPO",
+				parent			: container_links
+			})
+			
+		}
+
+
+	},
+
+	render_rows : async function(row,coins){
+
+		if(row.table === "mints"){
+
+			await this.render_rows_cecas(row,coins)
+
+		}else{
+			if(row.table === "findspots"){
+
+				await this.render_rows_hallazgo(row,coins)
+
+			}else{
+
+				await this.render_rows_complejos(row,coins)
+
+			}
+		}
 
 
 
-	/**
-	* RENDER_TYPES_LIST
-	* @return DOM node
-	*/
-	render_types_list : function(options) {
+	},
 
-		const global_data_item	= options.global_data_item
-		const types_rows		= options.types_rows
-		const coins_rows		= options.coins_rows
-		// const info			= options.info
+	render_rows_hallazgo : async function(row) {
 
+		const self = this
 		const fragment = new DocumentFragment()
+		let text_content = null
+		let separador = null
 
-		const wrapper = common.create_dom_element({
+		text_content = "Hallazgo : " + row.name
+		separador = "-"
+		
+
+		const container_titulo = common.create_dom_element({
 			element_type	: "div",
-			class_name		: "types_list_wrapper",
+			class_name		: "container_title",
 			parent			: fragment
 		})
 
-		let item_type
-
-		// title line
-			if (global_data_item.table) {
-				const title_line = common.create_dom_element({
-					element_type	: "div",
-					class_name		: "line-tittle-wrap",
-					parent			: wrapper
-				})
-				switch(global_data_item.table){
-					case 'mints'	: item_type = 'mint';		break;
-					case 'hoards'	: item_type = 'hoard';		break;
-					case 'findspots': item_type = 'findspot';	break;
-				}
-				const title = '<span class="note">' + tstring[item_type] + ': </span>' + global_data_item.name
-				common.create_dom_element({
-					element_type	: "div",
-					class_name		: "line-tittle golden-color",
-					inner_html		: title,
-					parent			: title_line
-				})
-
-				// separator horinzontal
-					common.create_dom_element({
-						element_type	: "div",
-						class_name		: "golden-separator",
-						parent			: fragment
-					})
-			}
-
-
-		// types list
-			if (types_rows && types_rows.length>0) {
-
-				const types_wrap = common.create_dom_element({
-					element_type	: "div",
-					class_name		: "types_wrap",
-					parent			: fragment
-				})
-
-				const cross_coins = function(coins_rows, coin_references) {
-					// console.log("coins_rows:",coins_rows);
-					// console.log("coin_references:",coin_references);
-
-					const ar_found_coin_row = []
-					for (let i = coin_references.length - 1; i >= 0; i--) {
-						const coin_section_id = coin_references[i]
-						const found_coin_row = coins_rows.find(function(el){
-							return el.section_id==coin_section_id
-						})
-						if (found_coin_row) {
-							ar_found_coin_row.push(found_coin_row)
-						}
-					}
-					return ar_found_coin_row
-				}
-
-				let last_mint_label = null
-				// sort types_rows by mint name to allow group by
-				types_rows.sort((a, b) => (a.p_mint > b.p_mint) ? 1 : -1)
-
-				// catalog_row_fields
-					// for (let i = 0; i < types_rows.length; i++) {
-					for (let i = types_rows.length - 1; i >= 0; i--) {
-
-						const type_row = types_rows[i]
-
-						// cross_coins
-							const ar_found_coin_row = type_row.coin_references
-								? cross_coins(coins_rows, type_row.coin_references)
-								: []
-							// console.log("ar_found_coin_row:",ar_found_coin_row, ar_found_coin_row.length);
-							// console.log("type_row:",type_row);
-
-						// mint grouper (only non already mints)
-							if (item_type!=='mint') {
-
-								const mint_label = type_row.p_mint && Array.isArray(type_row.p_mint)
-									? type_row.p_mint.join(' - ')
-									: null
-								if (mint_label && mint_label!==last_mint_label) {
-									// mint_line
-									common.create_dom_element({
-										element_type	: "div",
-										class_name		: "mint_line line-tittle golden-color",
-										inner_html		: mint_label,
-										parent			: types_wrap
-									})
-
-									last_mint_label = mint_label
-								}
-							}
-
-						// type node
-							const type_row_node = catalog_row_fields.draw_item(type_row)
-							types_wrap.appendChild(type_row_node)
-
-						// debug info
-							// if(SHOW_DEBUG===true) {
-							// 	let t = ''
-							// 	t +='-global_data_item types_list ('+info.types_list.length+'): ' + JSON.stringify(info.types_list, null, 2)
-							// 	t +='<br>-global_data_item coins_list ('+info.coins_list.length+'): ' + JSON.stringify(info.coins_list, null, 2)
-							// 	t +='<br>-Catalog '+type_row.section_id+' Type '+type_row.term_data+' coins: '+JSON.stringify(type_row.coin_references)
-							// 	t +='<br>-'+tstring[item_type]+' '+global_data_item.ref_section_id+' coins_rows: '+JSON.stringify( coins_rows.map(function(el){return el.section_id}) )
-							// 	t +='<br>-Cross coins ('+ar_found_coin_row.length+'): '+JSON.stringify( ar_found_coin_row.map(function(el){return el.section_id}) )
-
-							// 	const debug_show = ar_found_coin_row.length>0 ? 'hide' : ''
-							// 	common.create_dom_element({
-							// 		element_type	: "div",
-							// 		class_name		: "debug_info " + debug_show,
-							// 		inner_html		: t,
-							// 		parent			: type_row_node
-							// 	})
-							// }
-
-						// coins nodes
-							const ar_found_coin_row_length = ar_found_coin_row.length
-							if (ar_found_coin_row_length>0) {
-
-								const coins_wrap = common.create_dom_element({
-									element_type	: "div",
-									class_name		: "coins_wrap",
-									parent			: types_wrap
-								})
-
-								// button show coins
-									const button_show_coins = common.create_dom_element({
-										element_type	: "div",
-										class_name		: "button_show_coins",
-										inner_html		: (tstring.coins || "Coins") + " (" + ar_found_coin_row_length +")",
-										parent			: coins_wrap
-									})
-									button_show_coins.addEventListener("click", function(){
-										coins_list.classList.toggle("hide")
-										this.classList.toggle("opened")
-									})
-
-								// coins list
-									const coins_list = common.create_dom_element({
-										element_type	: "div",
-										class_name		: "coins_list gallery",
-										parent			: coins_wrap
-									})
-
-								// row nodes
-									for (let k = 0; k < ar_found_coin_row.length; k++) {
-										const coin_row	= ar_found_coin_row[k];
-										const coin_node	= type_row_fields_min.type_row_fields.draw_coin(coin_row)
-										coins_list.appendChild(coin_node)
-									}
-							}
-					}
-
-				// catalog draw_rows
-					// catalog.draw_rows({
-					// 	target	: types_wrap,
-					// 	ar_rows	: types_rows
-					// })
-
-				// mint draw_types
-					// mint.draw_types({
-					// 	target	: types_wrap,
-					// 	ar_rows	: {
-					// 		children : types_rows
-					// 	}
-					// })
-			}else{
-
-				// debug info
-					if(SHOW_DEBUG===true) {
-						let t = 'found types '+ JSON.stringify(types_rows, null, 2)
-						t +='<br>found coins '+ JSON.stringify(coins_rows.map(el=>el.section_id), null, 2)
-						t += '<br>map_global <pre>' + JSON.stringify(global_data_item, null, 3) + '</pre>'
-						common.create_dom_element({
-							element_type	: "div",
-							class_name		: "debug_info ",
-							inner_html		: t,
-							parent			: fragment
-						})
-					}
-			}
-
-
-		return fragment
-	},//end render_types_list
-
-
-
-	/**
-	* GET_RANGE_YEARS
-	* @return
-	*/
-	get_range_years : function() {
-
-		return new Promise(function(resolve){
-
-			const ar_fields = ['id','section_id','MIN(date_in + 0) AS min','MAX(date_in + 0) AS max']
-
-			const request_body = {
-				dedalo_get	: 'records',
-				db_name		: page_globals.WEB_DB,
-				lang		: page_globals.WEB_CURRENT_LANG_CODE,
-				table		: 'coins',
-				ar_fields	: ar_fields,
-				limit		: 0,
-				count		: false,
-				offset		: 0,
-				order		: 'id ASC'
-			}
-			data_manager.request({
-				body : request_body
-			})
-			.then(function(api_response){
-				// console.log("-> get_range_years api_response:",api_response);
-
-				let min = 0
-				let max = 0
-				if (api_response.result) {
-					for (let i = 0; i < api_response.result.length; i++) {
-						const row = api_response.result[i]
-						const current_min = parseInt(row.min)
-						if (min===0 || current_min<min) {
-							min = current_min
-						}
-						const current_max = parseInt(row.max)
-						// if (current_max>min) {
-							max = current_max
-						// }
-					}
-				}
-
-				const data = {
-					min : min,
-					max : max
-				}
-
-				resolve(data)
-			})
+		const titulo = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "line-tittle green-color",
+			text_content	: text_content,
+			parent			: container_titulo
 		})
-	}//end get_range_years
+
+		const imagen = common.create_dom_element({
+			element_type	: "img",
+			class_name		: "imagen",
+			src				: "tpl/assets/images/arrow-right.svg",
+			parent			: container_titulo
+		})
+
+		const separator = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "golden-separator",
+			parent			: fragment
+		})
+		
+		let text_road = ""
+		if(row.parents_text){
+
+			for (let index = 0; index < JSON.parse(row.parents_text).length-1; index++) {
+
+				if(index < JSON.parse(row.parents_text).length-2){
+					text_road += JSON.parse(row.parents_text)[index]+","
+				}else{
+					text_road += JSON.parse(row.parents_text)[index]
+				}
+			
+			}
+
+		}
+
+
+
+		const road = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "line-tittle mid",
+			text_content	: text_road != "" ? text_road.replace(/,/g, " - ") : row.name,
+			parent			: fragment
+
+		})
+
+	
+
+
+		const findspot_tree = await this.createfindspot_Tree(row)
+		await this.generate_Tree(findspot_tree,findspot_tree[0],fragment,0)
+		road.style.display = "none"
+
+		imagen.addEventListener("mousedown", function(){
+
+			if(self.button_state){
+				imagen.style.transform  = "rotate(0deg) translateY(0.75vh)";
+				road.style.display = "none"
+				
+			}else{
+				imagen.style.transform  = "rotate(90deg) translateX(0.75vh)";
+				road.style.display = "block"
+			}
+			self.button_state = !self.button_state
+		})
+
+		self.rows_container.appendChild(fragment)
+
+	},
+
+	
+
+	render_rows_cecas : async function(row,coins) {
+
+		const self = this
+		const fragment = new DocumentFragment()
+		let text_content = null
+		let separador = null
+
+		text_content = "Ceca : "
+		separador = ","
+
+
+		const container_titulo = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "container_title",
+			parent			: fragment
+		})
+
+		const titulo = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "line-tittle green-color",
+			text_content	: text_content,
+			parent			: container_titulo
+		})
+
+		const link = common.create_dom_element({
+			element_type	: "a",
+			class_name		: "link_ceca",
+			href			: this.WEB_ROOT_WEB+"/mint/"+ row.section_id,
+			text_content	: row.name,
+			parent			: container_titulo
+		})
+
+		const imagen = common.create_dom_element({
+			element_type	: "img",
+			class_name		: "imagen",
+			src				: "tpl/assets/images/arrow-right.svg",
+			parent			: container_titulo
+		})
+
+		const separator = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "golden-separator",
+			parent			: fragment
+		})
+		
+		const road = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "line-tittle mid",
+			text_content	: row.place.split(separador)[0],
+			parent			: fragment
+		})
+
+		const container_text_rows = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "container_text_rows",
+			parent			: fragment
+		})
+
+		const title_text_rows = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "title_text_rows",
+			text_content	: "Monedas("+coins.length+")",
+			parent			: container_text_rows
+		})
+
+
+		const imagen_flecha_monedas = common.create_dom_element({
+			element_type	: "img",
+			class_name		: "imagen_text_rows",
+			src				: "tpl/assets/images/arrow-right.svg",
+			parent			: container_text_rows
+		})
+
+		const container_rows = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "container_rows",
+			parent			: fragment
+		})
+
+		for (let index = 0; index < coins.length; index++) {
+			
+			const info_coin = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "info_coin",
+				parent			: container_rows
+			})
+
+			const container_images = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_images",
+				parent			: info_coin
+			})
+			const parsedCoinData = coins[index];
+			const image_obverse = "https://wondercoins.uca.es" + (parsedCoinData.image_obverse != null ? parsedCoinData.image_obverse : "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg")
+			common.create_dom_element({
+				element_type	: "img",
+				class_name		: "img_observe",
+				src				: image_obverse,
+				parent			: container_images
+			})
+			const image_reverse = "https://wondercoins.uca.es" + (parsedCoinData.image_obverse != null ? parsedCoinData.image_obverse : "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg")
+			common.create_dom_element({
+				element_type	: "img",
+				class_name		: "img_reserve",
+				src				: image_reverse,
+				parent			: container_images
+			})
+			const container_data = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_data",
+				parent			: info_coin
+			})
+			
+			let weight_text = null
+			if(coins[index].weight != null){
+				weight_text = "Peso: " + coins[index].weight +"g"
+			}else{
+				weight_text= "Peso: N/A"
+			}
+
+			const weight = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "weight",
+				text_content	: weight_text,
+				parent			: container_data
+			})
+			const diameter = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "diameter",
+				text_content	: "Módulo: "+ coins[index].diameter +"mm" ,
+				parent			: container_data
+			})
+
+			const catalogue_type = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "catalogue_type",
+				text_content	: "Colección: "+ coins[index].collection ,
+				parent			: container_data
+			})
+
+			let findspot_text = coins[index].findspot.split(" | ")[0]
+			const findspot = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "findspot",
+				text_content	:  "Hallazgo: "+ findspot_text,
+				parent			: info_coin
+			})
+
+			const tipo = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "type",
+				text_content	:  "Tipo: "+ coins[index].type_full_value,
+				parent			: info_coin
+			})
+
+			const container_links = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_links",
+				parent			: info_coin
+			})
+			let value = coins[index].type_data ? coins[index].type_data.replace('"',"").replace("[","").replace("]","").replace('"','') : 0;
+			let coin_type = value;
+
+			const type_link = common.create_dom_element({
+				element_type	: "a",
+				class_name		: "type_link",
+				href			: this.WEB_ROOT_WEB+"/type/"+ coin_type,
+				text_content	: "TIPO",
+				parent			: container_links
+			})
+			
+		}
+
+
+		road.style.display = "none"
+		container_rows.style.display = "none"
+		let container_rows_state = false
+		imagen.addEventListener("mousedown", function(){
+
+			if(self.button_state){
+				imagen.style.transform  = "rotate(0deg) translateY(0.75vh)";
+				road.style.display = "none"
+				
+			}else{
+				imagen.style.transform  = "rotate(90deg) translateX(0.75vh)";
+				road.style.display = "block"
+			}
+			self.button_state = !self.button_state
+		})
+
+		imagen_flecha_monedas.addEventListener("mousedown", function(){
+
+			if(container_rows_state){
+				imagen_flecha_monedas.style.transform  = "rotate(0deg) translateY(0.60vh)";
+				container_rows.style.display = "none"
+				
+			}else{
+				imagen_flecha_monedas.style.transform  = "rotate(90deg) translateX(0.60vh)";
+				container_rows.style.display = "grid"
+			}
+			container_rows_state = !container_rows_state
+		})
+
+
+		self.rows_container.appendChild(fragment)
+
+	},
+		render_rows_complejos : async function(row,coins) {
+
+		const self = this
+		const fragment = new DocumentFragment()
+		let text_content = null
+		let separador = null
+
+		text_content = "Complejo : " + row.name
+		separador = "-"
+		
+
+		const container_titulo = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "container_title",
+			parent			: fragment
+		})
+
+		const titulo = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "line-tittle green-color",
+			text_content	: text_content,
+			parent			: container_titulo
+		})
+
+		const imagen = common.create_dom_element({
+			element_type	: "img",
+			class_name		: "imagen",
+			src				: "tpl/assets/images/arrow-right.svg",
+			parent			: container_titulo
+		})
+
+		const separator = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "golden-separator",
+			parent			: fragment
+		})
+		
+		const road = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "line-tittle mid",
+			text_content	:  row.place.replace(/,/g, " - "),
+			parent			: fragment
+		})
+
+		const container_text_rows = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "container_text_rows",
+			parent			: fragment
+		})
+
+		const title_text_rows = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "title_text_rows",
+			text_content	: "Monedas("+coins.length+")",
+			parent			: container_text_rows
+		})
+
+
+		const imagen_flecha_monedas = common.create_dom_element({
+			element_type	: "img",
+			class_name		: "imagen_text_rows",
+			src				: "tpl/assets/images/arrow-right.svg",
+			parent			: container_text_rows
+		})
+
+		const container_rows = common.create_dom_element({
+			element_type	: "div",
+			class_name		: "container_rows",
+			parent			: fragment
+		})
+
+		for (let index = 0; index < coins.length; index++) {
+			
+			const info_coin = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "info_coin",
+				parent			: container_rows
+			})
+
+			const container_images = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_images",
+				parent			: info_coin
+			})
+			const parsedCoinData = coins[index];
+			const image_obverse = "https://wondercoins.uca.es" + (parsedCoinData.image_obverse != null ? parsedCoinData.image_obverse : "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg")
+			common.create_dom_element({
+				element_type	: "img",
+				class_name		: "img_observe",
+				src				: image_obverse,
+				parent			: container_images
+			})
+			const image_reverse = "https://wondercoins.uca.es" + (parsedCoinData.image_obverse != null ? parsedCoinData.image_obverse : "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg")
+			common.create_dom_element({
+				element_type	: "img",
+				class_name		: "img_reserve",
+				src				: image_reverse,
+				parent			: container_images
+			})
+			const container_data = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_data",
+				parent			: info_coin
+			})
+			
+			let weight_text = null
+			if(coins[index].weight != null){
+				weight_text = "Peso: " + coins[index].weight +"g"
+			}else{
+				weight_text= "Peso: N/A"
+			}
+
+			const weight = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "weight",
+				text_content	: weight_text,
+				parent			: container_data
+			})
+			const diameter = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "diameter",
+				text_content	: "Módulo: "+ coins[index].diameter +"mm" ,
+				parent			: container_data
+			})
+
+			const catalogue_type = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "catalogue_type",
+				text_content	: "Colección: "+ coins[index].collection ,
+				parent			: container_data
+			})
+
+			let findspot_text = coins[index].findspot.split(" | ")[0]
+			const findspot = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "findspot",
+				text_content	:  "Hallazgo: "+ findspot_text,
+				parent			: info_coin
+			})
+
+			const tipo = common.create_dom_element({
+				element_type	: "span",
+				class_name		: "type",
+				text_content	:  "Tipo: "+ coins[index].type_full_value,
+				parent			: info_coin
+			})
+
+			const container_links = common.create_dom_element({
+				element_type	: "div",
+				class_name		: "container_links",
+				parent			: info_coin
+			})
+			let value = coins[index].type_data ? coins[index].type_data.replace('"',"").replace("[","").replace("]","").replace('"','') : 0;
+			let coin_type = value;
+			const type_link = common.create_dom_element({
+				element_type	: "a",
+				class_name		: "type_link",
+				href			: this.WEB_ROOT_WEB+"/type/"+ coin_type,
+				text_content	: "TIPO",
+				parent			: container_links
+			})
+			
+		}
+
+
+		road.style.display = "none"
+		container_rows.style.display = "none"
+		let container_rows_state = false
+		imagen.addEventListener("mousedown", function(){
+
+			if(self.button_state){
+				imagen.style.transform  = "rotate(0deg) translateY(0.75vh)";
+				road.style.display = "none"
+				
+			}else{
+				imagen.style.transform  = "rotate(90deg) translateX(0.75vh)";
+				road.style.display = "block"
+			}
+			self.button_state = !self.button_state
+		})
+
+		imagen_flecha_monedas.addEventListener("mousedown", function(){
+
+			if(container_rows_state){
+				imagen_flecha_monedas.style.transform  = "rotate(0deg) translateY(0.60vh)";
+				container_rows.style.display = "none"
+				
+			}else{
+				imagen_flecha_monedas.style.transform  = "rotate(90deg) translateX(0.60vh)";
+				container_rows.style.display = "grid"
+			}
+			container_rows_state = !container_rows_state
+		})
+
+
+		self.rows_container.appendChild(fragment)
+
+	},
+	
 
 
 

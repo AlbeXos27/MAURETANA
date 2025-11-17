@@ -10,7 +10,9 @@
 			__WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/leaflet.css',
 			__WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/markercluster/MarkerCluster.css',
 			__WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/fullscreen/leaflet.fullscreen.css',
-			__WEB_TEMPLATE_WEB__ . '/catalog/css/catalog.css'
+			__WEB_TEMPLATE_WEB__ . '/catalog/css/catalog.css',
+			__WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/leaflet.legend.css',
+			__WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/leafletdraw/leaflet.draw.css'
 			// __WEB_TEMPLATE_WEB__ . '/mint/css/mint.css'
 		);
 
@@ -21,9 +23,12 @@
 		// page::$js_ar_url[]	= __WEB_TEMPLATE_WEB__ . '/' . $cwd . '/js/coins_row'.JS_SUFFIX.'.js';
 		page::$js_ar_url[]	= __WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/leaflet.js';
 		page::$js_ar_url[]	= __WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/markercluster/leaflet.markercluster.js';
+		page::$js_ar_url[]	= __WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/leaflet.legend.js';
+		page::$js_ar_url[]	= __WEB_TEMPLATE_WEB__ . '/assets/lib/leaflet/leafletdraw/leaflet.draw.js';
 		// page::$js_ar_url[]  = __WEB_TEMPLATE_WEB__ . '/catalog/js/catalog.js';
 		page::$js_ar_url[]  = __WEB_TEMPLATE_WEB__ . '/catalog/js/catalog_row_fields'.JS_SUFFIX.'.js';
 		page::$js_ar_url[]  = __WEB_TEMPLATE_WEB__ . '/type/js/type_row_fields'.JS_SUFFIX.'.js';
+		
 		// page::$js_ar_url[]  = __WEB_TEMPLATE_WEB__ . '/mint/js/mint.js';
 
 

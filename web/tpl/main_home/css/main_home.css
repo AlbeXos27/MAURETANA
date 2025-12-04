@@ -16,6 +16,13 @@
   overflow: hidden;
 }
 
+.coin{
+  width: 25vw !important;
+  height: auto;
+  margin-right: 5rem;
+  padding-bottom: 35vh;
+}
+
 .parallax img{
   position: absolute;
   width: 100%;
@@ -40,7 +47,7 @@
 
 .section img{
 
-  width: 550px;
+  width: 25vw;
   height: auto;
   opacity: 0;
   transition: transform 0.2s linear, opacity 0.2s linear;
@@ -55,6 +62,11 @@
   .section img{
     width: 300px;
     opacity: 1;
+  }
+
+  .section p{
+    font-size: 52px;
+    margin-left: 0;
   }
 }
 

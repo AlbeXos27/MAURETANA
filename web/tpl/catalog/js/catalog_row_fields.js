@@ -12,9 +12,11 @@ var catalog_row_fields = {
 	ar_rows : [],
 	caller  : null,
 
+	
 
+	draw_item : function(item,rows_list_container) {
 
-	draw_item : function(item) {
+		
 
 		const self 		 = this
 		const term_table = item.term_table
@@ -46,6 +48,7 @@ var catalog_row_fields = {
 						})
 
 					// type info
+					
 						self.node_factory(item, "term", term_line, "span", null)
 						self.node_factory(item, "ref_type_material", term_line, null, null)
 						self.node_factory(item, "ref_type_denomination", term_line, null, null)
@@ -117,8 +120,9 @@ var catalog_row_fields = {
 
 
 					// term
+					
 						self.node_factory(item, "term", type_info, "span", null)
-
+					
 					// conditionals
 						const my_parent			= item.parent ? item.parent[0] : null
 						const add_denomination	= item.add_denomination ? item.add_denomination : null
@@ -183,9 +187,9 @@ var catalog_row_fields = {
 						self.node_factory(item, "ref_type_legend_transcription_reverse", legend_reverse, null, null)
 
 					self.node_factory(item, "ref_type_equivalents", type_container, null, null)
-
+					
 					// images
-
+						
 						const mint_number = (item.ref_mint_number)
 						? item.ref_mint_number+'/'
 						: ''
@@ -203,53 +207,122 @@ var catalog_row_fields = {
 							class_name		: "coins_images_container",
 							parent			: type_container
 						})
+						coins_images_container.addEventListener("click", function(e) {
+							if(e.target.tagName == "IMG"){
+								e.preventDefault();
+								image_gallery.OpenGallery(e);
+							}
+						});
 
 						const coins_images = common.create_dom_element({
 							element_type	: "div",
-							class_name		: "coins_images",
+							class_name		: "types_img gallery",
 							parent			: coins_images_container
 						})
+						
 						coins_images.style.width = (diameter * 4 ) + 'mm'
 
+						let image_obverse= item.ref_coins_image_obverse_thumb.replace(".jpg",".png")
 						// img_obverse
-							const image_link_obverse = common.create_dom_element({
-								element_type	: "a",
-								class_name		: "image_link",
-								href			: item.ref_coins_image_obverse,
-								parent			: coins_images
-							})
-							const img_obverse = common.create_dom_element({
-								element_type	: "img",
-								class_name		: "image_obverse",
-								src				: item.ref_coins_image_obverse_thumb,
-								title			: item.section_id,
-								dataset			: {caption: page_globals.OWN_CATALOG_ACRONYM + " " + mint_number + c_name  },
-								parent			: image_link_obverse
-							})
-							img_obverse.style.width = (diameter * 2 ) + 'mm'
-							img_obverse.hires = item.ref_coins_image_obverse
-							img_obverse.loading="lazy"
-							img_obverse.addEventListener("load", load_hires, false)
+						let image_reverse= item.ref_coins_image_reverse_thumb.replace(".jpg",".png")
 
-						// img_reverse
-							const image_link_reverse = common.create_dom_element({
-								element_type	: "a",
-								class_name		: "image_link",
-								href			: item.ref_coins_image_reverse,
-								parent			: coins_images
-							})
-							const img_reverse = common.create_dom_element({
-								element_type	: "img",
-								class_name		: "image_reverse",
-								src				: item.ref_coins_image_reverse_thumb,
-								title			: item.section_id,
-								//dataset		: {caption: type_number},
-								parent			: image_link_reverse
-							})
-							img_reverse.style.width = (diameter * 2 ) + 'mm'
-							img_reverse.hires = item.ref_coins_image_reverse
-							img_reverse.loading="lazy"
-							img_reverse.addEventListener("load", load_hires, false)
+						catalog_row_fields.cargarImagen(item.term_section_id).then(function(imageObverse) {
+							if (imageObverse && imageObverse.image_obverse !== "/dedalo/media/image/1.5MB/20000/rsc29_rsc170_20917.jpg" && imageObverse.image_obverse != null) {
+							
+								// Usar imageObverse aquí después de que la promesa se haya resuelto
+								const image_link_obverse = common.create_dom_element({
+									element_type	: "a",
+									class_name		: "image_link",
+									href			: "https://wondercoins.uca.es" + imageObverse.image_obverse,
+									parent			: coins_images
+								})
+								
+								const img_obverse = common.create_dom_element({
+									element_type	: "img",
+									class_name		: "image_obverse",
+									src				: "https://wondercoins.uca.es" + imageObverse.image_obverse,
+									title			: item.section_id,
+									dataset			: {caption: page_globals.OWN_CATALOG_ACRONYM + " " + mint_number + c_name  },
+									parent			: image_link_obverse
+								})
+								img_obverse.style.width = (diameter * 2 ) + 'mm'
+								img_obverse.hires = "https://wondercoins.uca.es" + imageObverse.image_obverse
+								img_obverse.loading="lazy"
+								img_obverse.addEventListener("load", load_hires, false)
+								// Aquí puedes continuar con tu lógica, por ejemplo, mostrar la imagen
+
+
+							
+								const image_link_reverse = common.create_dom_element({
+									element_type	: "a",
+									class_name		: "image_link",
+									href			: "https://wondercoins.uca.es" + imageObverse.image_reverse,
+									parent			: coins_images
+								})
+								
+								const img_reverse = common.create_dom_element({
+									element_type	: "img",
+									class_name		: "image_reverse",
+									src				: "https://wondercoins.uca.es" + imageObverse.image_reverse,
+									title			: item.section_id,
+									dataset			: {caption: page_globals.OWN_CATALOG_ACRONYM + " " + mint_number + c_name  },
+									parent			: image_link_reverse
+								})
+								img_reverse.style.width = (diameter * 2 ) + 'mm'
+								img_reverse.hires = "https://wondercoins.uca.es" + imageObverse.image_reverse
+								img_reverse.loading="lazy"
+								img_reverse.addEventListener("load", load_hires, false)
+
+							} else {
+
+
+								const image_link_obverse = common.create_dom_element({
+									element_type	: "a",
+									class_name		: "image_link",
+									href			: image_obverse,
+									parent			: coins_images
+								})
+								
+								const img_obverse = common.create_dom_element({
+									element_type	: "img",
+									class_name		: "image_obverse",
+									src				: image_obverse,
+									title			: item.section_id,
+									dataset			: {caption: page_globals.OWN_CATALOG_ACRONYM + " " + mint_number + c_name  },
+									parent			: image_link_obverse
+								})
+								img_obverse.style.width = (25 * 2 ) + 'mm'
+								img_obverse.hires = image_obverse
+								img_obverse.loading="lazy"
+								img_obverse.addEventListener("load", load_hires, false)
+								// Aquí puedes continuar con tu lógica, por ejemplo, mostrar la imagen
+
+
+							
+								const image_link_reverse = common.create_dom_element({
+									element_type	: "a",
+									class_name		: "image_link",
+									href			: image_reverse,
+									parent			: coins_images
+								})
+								
+								const img_reverse = common.create_dom_element({
+									element_type	: "img",
+									class_name		: "image_reverse",
+									src				: image_reverse,
+									title			: item.section_id,
+									//dataset		: {caption: type_number},
+									parent			: image_link_reverse
+								})
+								img_reverse.style.width = (25 * 2 ) + 'mm'
+								img_reverse.hires = image_reverse
+								img_reverse.loading="lazy"
+								img_reverse.addEventListener("load", load_hires, false)
+
+								
+							}
+						});
+						
 
 						if (window.matchMedia) {
 							window.matchMedia('print').addListener(function(mql) {
@@ -265,7 +338,7 @@ var catalog_row_fields = {
 								}
 							})
 						}
-
+						
 					const collection_auction = common.create_dom_element({
 						element_type	: "div",
 						class_name		: "collection_auction",
@@ -273,19 +346,22 @@ var catalog_row_fields = {
 					})
 					self.node_factory(item, "ref_coins_collection", collection_auction, null, null)
 					self.node_factory(item, "ref_coins_auction", collection_auction, null, null)
+					
 				}
 				break;
 
 
 			case "mints":
+				const filas_sin_inicio = self.ar_rows.filter(el => el.section_id == item.parent)
+				//console.log(filas_sin_inicio)
 				common.create_dom_element({
 					element_type	: "div",
 					class_name		: "mint",
-					text_content	: item.term, // + " [" + term_table + "]",
+					text_content	: filas_sin_inicio[0].term_section_label[0].startsWith("Grupo") ? "("+ filas_sin_inicio[0].term +") "+ item.term: "" +  item.term, // + " [" + term_table + "]",
 					parent			: fragment
 				})
 
-				if (item.term_section_id) {
+				if (item.term_section_id && item.term_section_label[0] == "Cecas") {
 					const link = common.create_dom_element({
 						element_type	: "a",
 						class_name		: "link link_mint",
@@ -294,6 +370,8 @@ var catalog_row_fields = {
 						parent			: fragment
 					})
 				}
+
+
 				break;
 
 			default:
@@ -311,6 +389,9 @@ var catalog_row_fields = {
 			class_name		: "row_node "+term_table
 		})
 		node.appendChild(fragment)
+
+		
+
 
 
 		return node
@@ -384,6 +465,7 @@ var catalog_row_fields = {
 					// }else{
 					// 	current_value = "MIB " + mint_number + item[name]
 					// }
+					
 					current_value = page.render_type_label(item)
 					break;
 
@@ -391,23 +473,94 @@ var catalog_row_fields = {
 					current_value = item[name]
 			}
 
-
+			
 			const node = common.create_dom_element({
 				element_type	: current_node_type,
 				class_name		: current_class_name,
 				inner_html		: current_value,
 				parent			: parent
 			})
+			
 			node.title = item.section_id
-
+			
 
 			return true
 		}
 
 		return false
-	}//end node_factory
+	},//end node_factory
 
+ subcadenaComunVarias: function(cadenas) {
+    if (cadenas.length === 0) return "";
 
+    let cadenaBase = cadenas[0];
+    let maxSub = "";
+
+    for (let len = cadenaBase.length; len > 0; len--) { // longitud de subcadena
+        for (let i = 0; i <= cadenaBase.length - len; i++) {
+            const sub = cadenaBase.slice(i, i + len);
+            if (cadenas.every(c => c.includes(sub))) {
+                return sub; // devuelve la primera subcadena más larga encontrada
+            }
+        }
+    }
+
+    return "";
+},
+
+	load_type_coins : function(id) {
+		const js_promise = data_manager.request({
+			body : {
+				dedalo_get 	: 'records',
+				table 		: 'types',
+				ar_fields 	: ['*'],
+				// sql_fullselect : 'DISTINCT term, 'parents
+				lang 		: page_globals.WEB_CURRENT_LANG_CODE,
+				limit 		: 0,
+				count 		: false,
+				sql_filter  : 'section_id='+id,
+				resolve_portals_custom	: {
+					"bibliography_data"				: "bibliographic_references",
+					// coins resolution
+					"ref_coins_union"				: "coins",
+					"coin_references"				: "coins",
+					"coins.bibliography_data"		: "bibliographic_references",
+					// "coins.images_obverse"		: "images",
+					// findspots resolution
+					"ref_coins_findspots_data"		: "findspots",
+					"findspots.bibliography_data"	: "bibliographic_references",
+					// hoard resolution
+					"ref_coins_hoard_data"			: "hoards",
+					"hoards.bibliography_data"		: "bibliographic_references",
+					"denomination_data"				: "denomination",
+					"material_data"					: "material",
+					"related_types_data"			: "types",
+					// mint resolution
+					"mint_data"						: "mints"
+				}
+			}
+		})
+
+		return js_promise
+	},
+	 cargarImagen: async function (id) {
+		let imageObverse;
+	
+		try {
+			const response = await catalog_row_fields.load_type_coins(id);
+	
+			if (response.result && response.result.length > 0) {
+				if (response.result[0].coin_references && response.result[0].coin_references.length > 0) {
+					imageObverse = response.result[0].coin_references[0];
+					//console.log("imageObverse asignada:", imageObverse);
+				}
+			}
+		} catch (error) {
+			console.error("Error al cargar la imagen:", error);
+		}
+	
+		return imageObverse; // Devuelve el valor una vez que la promesa se resuelve
+	},
 
 	/**
 	* FORM_NODE_FACTORY

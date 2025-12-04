@@ -560,7 +560,6 @@ export const type_row_fields = {
 				element_type	: "div",
 				class_name		: "info_line " + name
 			})
-
 		if (item[name] && item[name].length>0) {
 
 			// common.create_dom_element({
@@ -1042,8 +1041,8 @@ export const type_row_fields = {
 				const mint_number = (item.mint_number)
 					? item.mint_number+'/'
 					: ''
-
-				const item_text = item[name] + " " +  mint_number + item["number"]
+				
+				const item_text = item[name] + " " +  mint_number + item["number"] ? item["number"] : ""
 
 				self.type = item_text
 				const node = common.create_dom_element({
@@ -1369,6 +1368,7 @@ export const type_row_fields = {
 
 				const coins			= el.coins;
 				const coins_length	= coins.length
+
 				for (let j = 0; j < coins_length; j++) {
 					const coin_section_id	= coins[j]
 
@@ -1813,7 +1813,7 @@ export const type_row_fields = {
 		// map_container
 			const map_container = common.create_dom_element({
 				element_type	: "div",
-				class_name		: "map_container hide_opacity map",
+				class_name		: "map_container map",
 				parent			: line
 			})
 
@@ -2690,7 +2690,7 @@ export const type_row_fields = {
 	// 	parentNode: HTML node that will have the onclick event
 	// 	data_ref: STRING type of the item in DB ex: material_data
 	create_float_prompt : function (item, parentNode, data_ref){
-
+		
 		if (item[data_ref] && item[data_ref].length>0) {
 
 			parentNode.classList.add("active-pointer");

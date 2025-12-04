@@ -45,6 +45,7 @@ function map_factory() {
 	}
 
 
+
 	this.init = function(options) {
 
 		const self = this;
@@ -67,7 +68,6 @@ function map_factory() {
 			console.error("Contenedor del mapa no válido.");
 			return;
 		}
-
 		// Crear el mapa con Leaflet centrado en Cádiz
 		self.map = L.map(containerElement, { preferCanvas: true }).setView(self.map_position, self.zoom);
 		self.add_layer_control(self.map,self.source_maps)
@@ -82,6 +82,8 @@ function map_factory() {
 			L.tileLayer("https://dh.gu.se/tiles/imperium/{z}/{x}/{y}.png").addTo(self.map);		
 		}
 		
+	
+
 			const clusters = self.add_markers(self.map,self.result,self.map_node)
 			self.create_legend(self.map,clusters)
 		
@@ -173,13 +175,25 @@ function map_factory() {
 
 				
 				const georef_hallazgo = JSON.parse(data.hallazgos.datos[index].georef)
-				
 				if(georef_hallazgo){
 
 					
 					const location = this.obtain_location(georef_hallazgo[0]);
-					data_hallazgo.lat = location[0]
-					data_hallazgo.lon = location[1]
+					try {
+						data_hallazgo.lat = location[0]
+						data_hallazgo.lon = location[1]
+					} catch (error) {
+						try {
+
+							data_hallazgo = JSON.parse(data.hallazgos.datos[index].map)
+
+						} catch (error) {
+
+							data_hallazgo = data.hallazgos.datos[index].map
+
+						}
+					}
+				
 				
 				}else{
 
@@ -214,19 +228,26 @@ function map_factory() {
 			for (let index = 0; index < data.cecas.datos.length; index++) {
 
 				let rawMap = data.cecas.datos[index].map;
-				let data_ceca;
+				const data_ceca = {lat : 0,lon : 0};
+				if(data.cecas.datos[index].georef_geojson != null){
+					
+					const cambio = JSON.parse(data.cecas.datos[index].georef_geojson);
+					
+					try{
 
-					// Comprobamos si map es string o ya es objeto
-					if (typeof rawMap === "string") {
-						try {
-							data_ceca = JSON.parse(rawMap);
-						} catch (e) {
-							console.error("El valor no es un JSON válido:", rawMap, e);
-							continue; // saltamos este índice si falla
+						data_ceca.lat = cambio[0].layer_data.features[0].geometry.coordinates[1];
+						data_ceca.lon = cambio[0].layer_data.features[0].geometry.coordinates[0];
+
+					}catch(e){
+						data_ceca.lat = rawMap.lat || 0;
+						data_ceca.lon = rawMap.lon || 0;
+						console.log("error aqui", cambio[0].layer_data.features[0])
 						}
-					} else {
-						data_ceca = rawMap;
-					}
+					
+				}
+				console.log("DATA CECA", data_ceca)
+
+
 				if (data_ceca != null && data_ceca.lat !== undefined && data_ceca.lon !== undefined) {
 					const markerCeca = L.marker([data_ceca.lat, data_ceca.lon], { icon: iconoCeca })
 						.bindPopup(`<b>Ceca</b><br>${data.cecas.datos[index].name}`)
@@ -245,12 +266,27 @@ function map_factory() {
 			// --- Complejos ---
 			if (data.complejos.datos != null) {
 				for (let index = 0; index < data.complejos.datos.length; index++) {
-					let data_complejos = null;
+
+				const georef_complejo = JSON.parse(data.complejos.datos[index].georef)
+				let data_complejos = {lat : 0, lon : 0 };
+
+				if(georef_complejo){
+
+					
+					const location = this.obtain_location(georef_complejo[0]);
+					data_complejos.lat = location[0]
+					data_complejos.lon = location[1]
+				
+				}else{
+
 					try {
 						data_complejos = JSON.parse(data.complejos.datos[index].map);
 					} catch (error) {
 						data_complejos = data.complejos.datos[index].map;
 					}
+
+
+				}
 
 					if (data_complejos != null) {
 						const markerComplejo = L.marker([data_complejos.lat, data_complejos.lon], { icon: iconoComplejo })

@@ -138,7 +138,7 @@ var coins =  {
 				}
 			})
 
-		// ref_auction
+	/* 	// ref_auction
 			self.form.item_factory({
 				id				: "ref_auction",
 				name			: "ref_auction",
@@ -171,7 +171,7 @@ var coins =  {
 						table		: 'coins'
 					})
 				}
-			})
+			}) */
 
 		// type
 			self.form.item_factory({
@@ -210,7 +210,8 @@ var coins =  {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'coins'
+						table		: 'coins',
+						value_splittable : true
 					})
 				}
 			})
@@ -247,12 +248,13 @@ var coins =  {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'coins'
+						table		: 'coins',
+						value_splittable : true
 					})
 				}
 			})
 
-		// section_id
+		/* // section_id
 			self.form.item_factory({
 				id			: "section_id",
 				name		: "section_id",
@@ -263,7 +265,7 @@ var coins =  {
 				eq_out		: "",
 				parent		: form_row
 			})
-
+ */
 		// hoard
 			self.form.item_factory({
 				id			: "hoard",
@@ -316,7 +318,7 @@ var coins =  {
 			// 		}
 			// 	})
 
-		// countermark_obverse
+		/* // countermark_obverse
 			self.form.item_factory({
 				id			: "countermark_obverse",
 				name		: "countermark_obverse",
@@ -349,7 +351,7 @@ var coins =  {
 					})
 				}
 			})
-
+ */
 		// equivalents
 			// 	self.form.item_factory({
 			// 		id			: "equivalents",
@@ -368,7 +370,7 @@ var coins =  {
 			// 		}
 			// 	})
 
-		// bibliography_author
+/* 		// bibliography_author
 			self.form.item_factory({
 				id				: "bibliography_author",
 				name			: "bibliography_author",
@@ -436,7 +438,7 @@ var coins =  {
 				eq_out			: '"%',
 				is_term			: false,
 				parent			: form_row
-			})
+			}) */
 
 
 		// submit button
@@ -518,16 +520,20 @@ var coins =  {
 			// const resolve_portals_custom = {"mint_data" : "mints"}
 
 			// sql_filter
-				const filter = self.form.build_filter()
+			const filter = self.form.build_filter()
 				// parse_sql_filter
 				const group			= []
-				const parsed_filter	= self.form.parse_sql_filter(filter, group)
+				const parsed_filter	= self.form.parse_sql_filter(filter, group,true)
+				const base_filter = "(name != '' AND map != '')"
+				let final_filter = base_filter
 				const sql_filter	= parsed_filter
 					? '(' + parsed_filter + ')'
 					: null
 				if(SHOW_DEBUG===true) {
-					// console.log("-> filter:",filter);
 					console.log("-> coins form_submit sql_filter:",sql_filter);
+				}
+				if (sql_filter) {
+					final_filter = base_filter + ' AND ' + sql_filter
 				}
 				// if (!sql_filter|| sql_filter.length<3) {
 				// 	return new Promise(function(resolve){

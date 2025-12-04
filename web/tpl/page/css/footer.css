@@ -40,30 +40,31 @@
 
 #footer ul li{
   display: flex;
-  flex-direction: column;
   align-items: center; 
   color: white;
   font-family: 'Times New Roman', Times, serif;
-  font-size: 24px;
+  font-size: 30px;
 
-}
-
-#footer ul li span{
-  text-align: center;
-  border-bottom: 1.55px black solid;
-  padding-bottom: 1.5px;
-   width: fit-content;
 }
 
 #footer ul li a {
-  width: 80%;
-  height: 80%;
+  width: 70%;
+  height: 70%;
   margin: 0 auto;
 }
+
+#footer ul li a:hover {
+ 
+  transform: scale(102%,102%);
+  transition: all 0.2s linear;
+
+}
+
 #footer ul li img {
   width: 100%;
   height: 100%;
   color: white;
+   z-index: 100;
 }
 
 .Copyright {

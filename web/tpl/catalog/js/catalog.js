@@ -40,7 +40,7 @@ var catalog = {
 			const export_data_container	= options.export_data_container
 			const form_items_container	= options.form_items_container
 			const psqo					= options.psqo
-
+			
 		// fix
 			self.rows_list_container	= rows_list_container
 			self.export_data_container	= export_data_container
@@ -200,10 +200,10 @@ var catalog = {
 
 				// if psqo is received, recreate the original search into the current form and submit
 				const decoded_psqo = psqo_factory.decode_psqo(psqo)
+				//console.log(decoded_psqo)
 				if (decoded_psqo) {
 
 					self.form.parse_psqo_to_form(decoded_psqo)
-
 					self.form_submit(form_node, {
 						scroll_result : true
 					})
@@ -231,6 +231,7 @@ var catalog = {
 							q  			: `["${mint.name}"]`,
 							is_term		: true
 						})
+						
 						// console.log("custom_form.form_items", [a]);
 						self.form_submit(form_node, {
 							form_items		: [mint_item],
@@ -262,9 +263,9 @@ var catalog = {
 			class_name 		: "form-row fields",
 			parent 			: fragment
 		})
+		
 
-
-		// global_search
+		 // global_search
 			self.form.item_factory({
 				id 			: "global_search",
 				name 		: "global_search",
@@ -305,7 +306,7 @@ var catalog = {
 						}
 					})
 				}
-			})
+			}) 
 
 		// mint
 			self.form.item_factory({
@@ -322,7 +323,8 @@ var catalog = {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -333,46 +335,28 @@ var catalog = {
 				name 		: "number",
 				q_column 	: "term",
 				q_table 	: "types",
-				label		: tstring.number_key || "Number & Key",
+				label		: "Grupo Numismático",
 				is_term 	: false,
 				parent		: form_row,
 				group_op 	: '$or',
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
 
-		// culture
-			self.form.item_factory({
-				id				: "culture",
-				name			: "culture",
-				label			: tstring.culture || "culture",
-				q_column		: "p_culture",
-				value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
-				eq_in			: "%",
-				eq_out			: "%",
-				is_term			: true,
-				parent			: form_row,
-				callback		: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'catalog'
-					})
-				}
-			})
-
-		// creator (autoridad)
+		// Cargo
 			self.form.item_factory({
 				id				: "role",
 				name			: "role",
 				label			: tstring.role || "Role",
 				q_column		: "ref_type_creators_roles", //"p_creator",
-				// value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
-				value_split 	: '|',
-				// q_splittable 	: true,
+				//value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
+				//q_splittable 	: true,
+				value_split : "|",
 				q_selected_eq 	: 'LIKE',
 				eq_in			: "%",
 				eq_out			: "%",
@@ -381,7 +365,9 @@ var catalog = {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						value_splittable : true
+						
 					})
 				}
 			})
@@ -393,9 +379,9 @@ var catalog = {
 				label			: tstring.creator || "creator",
 				q_column		: "ref_type_creators_full_name", //"p_creator",
 				// value_wrapper	: ['["','"]'], // to obtain ["value"] in selected value only
-				value_split 	: ' | ',
 				// q_splittable 	: true,
 				q_selected_eq 	: 'LIKE',
+				value_split		: " | ",
 				eq_in			: "%",
 				eq_out			: "%",
 				is_term			: false, //true
@@ -403,7 +389,9 @@ var catalog = {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						value_splittable : true
+						
 					})
 				}
 			})
@@ -421,7 +409,8 @@ var catalog = {
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -439,90 +428,12 @@ var catalog = {
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
 
-		// symbol_obverse
-			self.form.item_factory({
-				id			: "symbol_obverse",
-				name		: "symbol_obverse",
-				label		: tstring.symbol_obverse || "symbol obverse",
-				q_column	: "ref_type_symbol_obverse",
-				eq_in		: "%",
-				// q_table	: "ts_period",
-				is_term		: false,
-				parent		: form_row,
-				callback	: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'catalog'
-					})
-				}
-			})
-
-		// symbol_reverse
-			self.form.item_factory({
-				id			: "symbol_reverse",
-				name		: "symbol_reverse",
-				label		: tstring.symbol_reverse || "symbol reverse",
-				q_column	: "ref_type_symbol_reverse",
-				eq_in		: "%",
-				// q_table	: "ts_period",
-				is_term		: false,
-				parent		: form_row,
-				callback	: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'catalog'
-					})
-				}
-			})
-
-		// iconography_obverse
-			self.form.item_factory({
-				id				: "iconography_obverse",
-				name			: "iconography_obverse",
-				label			: tstring.iconography_obverse || "iconography obverse",
-				q_column		: "ref_type_design_obverse_iconography",
-				value_split		: ' | ',
-				q_splittable	: true,
-				q_selected_eq	: 'LIKE',
-				eq_in			: "%",
-				eq_out			: "%",
-				// q_table		: "ts_period",
-				is_term			: false,
-				parent			: form_row,
-				callback	: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'catalog'
-					})
-				}
-			})
-
-		// iconography_reverse
-			self.form.item_factory({
-				id				: "iconography_reverse",
-				name			: "iconography_reverse",
-				label			: tstring.iconography_reverse || "iconography reverse",
-				q_column		: "ref_type_design_reverse_iconography",
-				value_split		: ' | ',
-				q_splittable	: true,
-				q_selected_eq	: 'LIKE',
-				eq_in			: "%",
-				eq_out			: "%",
-				// q_table		: "ts_period",
-				is_term			: false,
-				parent			: form_row,
-				callback		: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'catalog'
-					})
-				}
-			})
 
 		// legend_obverse
 			self.form.item_factory({
@@ -538,7 +449,8 @@ var catalog = {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -557,7 +469,8 @@ var catalog = {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -576,7 +489,8 @@ var catalog = {
 				callback		: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -585,7 +499,7 @@ var catalog = {
 			self.form.item_factory({
 				id 			: "group",
 				name 		: "group",
-				label		: tstring.group || "group",
+				label		: "Catálogo" || "group",
 				q_column 	: "p_group",
 				eq_in 		: "%",
 				// q_table 	: "ts_period",
@@ -594,7 +508,8 @@ var catalog = {
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -611,7 +526,8 @@ var catalog = {
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -645,7 +561,8 @@ var catalog = {
 				callback	: function(form_item) {
 					self.form.activate_autocomplete({
 						form_item	: form_item,
-						table		: 'catalog'
+						table		: 'catalog',
+						
 					})
 				}
 			})
@@ -668,7 +585,7 @@ var catalog = {
 			// })
 
 		// technique
-			self.form.item_factory({
+/* 			self.form.item_factory({
 				id 			: "technique",
 				name 		: "technique",
 				q_column 	: "ref_type_technique",
@@ -682,26 +599,7 @@ var catalog = {
 						table		: 'catalog'
 					})
 				}
-			})
-
-		// equivalents
-			self.form.item_factory({
-				id			: "equivalents",
-				name		: "equivalents",
-				q_column	: "ref_type_equivalents",
-				q_table		: "types",
-				eq_in		: "%",
-				eq_out		: "%",
-				label		: tstring.equivalents || "equivalents",
-				is_term		: false,
-				parent		: form_row,
-				callback	: function(form_item) {
-					self.form.activate_autocomplete({
-						form_item	: form_item,
-						table		: 'catalog'
-					})
-				}
-			})
+			}) */
 
 		// period
 			// self.form.item_factory({
@@ -1202,7 +1100,7 @@ var catalog = {
 		// search rows exec against API
 			const js_promise = self.search_rows({
 				filter			: filter,
-				limit			: 0,
+				limit			: 300,
 				process_result	: {
 					fn		: 'process_result::add_parents_and_children_recursive',
 					columns	: [{name : "parents"}]
@@ -1210,7 +1108,54 @@ var catalog = {
 			})
 			.then((parsed_data)=>{
 
-				event_manager.publish('form_submit', parsed_data)
+
+				const types_parsed_data = parsed_data.filter( item => (item.term_table === "types" && item.p_group != null));
+				const set_group_parsed_data = new Set();
+
+				for (let index = 0; index < types_parsed_data.length; index++) {
+					set_group_parsed_data.add(JSON.parse(types_parsed_data[index].p_group)[0]);
+				}
+				
+				const keys_group = Array.from(set_group_parsed_data);
+				const structure_tree = {};
+
+				for (let index = 0; index < keys_group.length; index++) {
+					
+					const base_key = {
+						people : {},
+						no_people : {mints: {},
+							no_mints : []
+						}
+					};
+					structure_tree[keys_group[index]] = base_key;
+				}
+
+				const set_people_parsed_data = new Set();
+				let types_without_people = 0;
+
+				for (let index = 0; index < types_parsed_data.length; index++) {
+
+					if(types_parsed_data[index].ref_type_creators_names == null || !types_parsed_data[index].ref_type_creators_roles || !types_parsed_data[index].ref_type_creators_roles.includes("Autoridad")){
+
+						types_without_people +=1;
+
+					}else{
+
+						set_people_parsed_data.add(types_parsed_data[index]);
+
+					}
+
+				}
+				
+				const array_people_data =  Array.from(set_people_parsed_data);
+
+				this.get_authors_from_find(array_people_data,structure_tree);
+				this.get_mints_from_find(types_parsed_data,structure_tree);
+				this.get_types_from_find(types_parsed_data,structure_tree);
+				//console.log("macaco ",structure_tree)
+
+
+				//event_manager.publish('form_submit', parsed_data)
 
 				// draw
 				// clean container_rows_list and add_spinner
@@ -1223,7 +1168,8 @@ var catalog = {
 				// draw rows
 					self.draw_rows({
 						target  : self.rows_list_container,
-						ar_rows : parsed_data
+						ar_rows : parsed_data,
+						structure_tree : structure_tree
 					})
 					.then(function(){
 						self.export_data_container.classList.remove("hide")
@@ -1553,11 +1499,23 @@ var catalog = {
 
 					// 	return null
 					// }
+				let parsed_filter    = self.form.parse_sql_filter(filter, group,true)
 
-			// parsed_filters
-				const sql_filter = self.form.parse_sql_filter(filter)
-				// const sql_filter = filter
-				// console.log("Final sql_filter:", sql_filter);
+                let sql_filter    = parsed_filter
+                    ? '(' + parsed_filter + ')'
+                    : null;
+
+
+				const filter_values = self.obtain_values_filter(filter)
+
+				if(sql_filter.includes("`p_group`") || filter_values.id == "number"){
+
+					sql_filter = `parents_text LIKE '%${filter_values.q}%' `
+					
+				}
+
+				console.log("sql_filter_catalog", sql_filter)
+				
 
 			// debug
 				if(SHOW_DEBUG===true) {
@@ -1573,7 +1531,6 @@ var catalog = {
 					lang			: lang,
 					sql_filter		: sql_filter,
 					limit			: limit,
-					group			: (group.length>0) ? group.join(",") : null,
 					count			: false,
 					order			: order,
 					process_result	: process_result
@@ -1583,7 +1540,7 @@ var catalog = {
 				})
 				.then((response)=>{
 					// console.log("++++++++++++ request_body:",request_body);
-					// console.log("--- search_rows API response:",response);
+					console.log("--- search_rows API response:",response);
 
 					// data parsed
 					const data = page.parse_catalog_data(response.result)
@@ -1601,7 +1558,14 @@ var catalog = {
 		})
 	},//end search_rows
 
-
+	obtain_values_filter: function (filter) {
+		if (typeof filter === "object" && filter !== null && Object.keys(filter).length < 2) {
+			const primeraClave = Object.keys(filter)[0]; 
+			return this.obtain_values_filter(filter[primeraClave]); 
+		} else {
+			return filter; // valor final
+		}
+	},
 
 	/**
 	* DRAW_ROWS
@@ -1614,6 +1578,7 @@ var catalog = {
 		// options
 			const target	= options.target // self.rows_list_container
 			const ar_rows	= options.ar_rows || []
+			const structure_tree = options.structure_tree || []
 
 		return new Promise(function(resolve){
 
@@ -1651,147 +1616,146 @@ var catalog = {
 				// page.add_spinner(container)
 
 			// const render_nodes = async () => {
-				const render_nodes = async function() {
-
-					const fragment = new DocumentFragment();
-
-					const ar_mints = ar_rows.filter(item => item.term_table==='mints')
-
-					const ar_parent = []
-					for (let i = 0; i < ar_mints.length; i++) {
-						const parent = (ar_mints[i].parent && typeof ar_mints[i].parent[0]!=="undefined")
-							? ar_mints[i].parent[0]
-							: null
-						const mint_parent = parent
-							? ar_rows.find(item => item.section_id==parent)
-							: null
-						if(!mint_parent){
-							console.warn("mint don't have public parent:",ar_mints[i]);
-							continue
-						}
-						// check if the parent is inside the ar_aprents, if not push inside else nothing
-						const unique_parent = ar_parent.find(item => item.section_id==parent)
-						if(typeof unique_parent==='undefined'){
-							ar_parent.push(mint_parent)
-						}
-					}
-					self.parents = ar_parent
-					// create the nodes with the unique parents: ar_parents
-					for (let i = 0; i < ar_parent.length; i++) {
-						// render_mints
-						self.get_children(ar_rows, ar_parent[i], fragment)
-					}
-
-					// sort rows
-						// let collator = new Intl.Collator('es',{ sensitivity: 'base', ignorePunctuation:true});
-						// ar_rows.sort( (a,b) => {
-						// 		let order_a = a.autoria +" "+ a.fecha_publicacion
-						// 		let order_b = b.autoria +" "+ b.fecha_publicacion
-						// 		//console.log("order_a",order_a, order_b);
-						// 		//console.log(collator.compare(order_a , order_b));
-						// 	return collator.compare(order_a , order_b)
-						// });
-
-					return fragment
-				}
-
-			render_nodes()
-			.then(fragment => {
+				
 
 				while (container.hasChildNodes()) {
 					container.removeChild(container.lastChild);
 				}
 
-				// bulk fragment nodes to container
-				container.appendChild(fragment)
 
-				// activate images lightbox
-					setTimeout(function(){
-						const images_gallery_containers = container
-						page.activate_images_gallery(images_gallery_containers, true)
-					}, 600)
+				//Generar filas aqui
+				//console.log("structure_tree ",structure_tree)
+	
+				const numismatic_group_fields = Object.keys(structure_tree);
+				for (let index = 0; index < numismatic_group_fields.length; index++) {
+					
+					self.render_numismatic_group(structure_tree,numismatic_group_fields[index],container);
+					
+				}
 
+				image_gallery.removeGallery?.(); // limpia listeners antiguos
+				image_gallery.set_up({ galleryNode: container });
+
+				
+				//container.appendChild(fragment)
 				resolve(container)
-			})
-
+				
 			return true
 		})
 	},//end draw_rows
 
 
+	render_numismatic_group : function(structure_tree,numismatic_group,container){
 
-	get_children : function(ar_rows, parent, parent_node){
+			const numismatic_group_div = common.create_dom_element({
+						element_type	: 'div',
+						class_name		: "numismatic_group",
+						inner_html		: numismatic_group || "Sin grupo asociado",
+						parent			: container
+					})
+			numismatic_group_div.addEventListener("click", (e) => {
+    			e.stopPropagation();
 
-		const self = this
+			const children = numismatic_group_div.querySelectorAll(":scope > .people, :scope > .mint_div");
+			children.forEach(child => {
+				child.style.display = child.style.display === "none" ? "block" : "none";
+			});
+		});		
+			this.render_people_numismatic_group(structure_tree[numismatic_group],numismatic_group_div);
+	},
 
-		const children = parent.children
+	render_people_numismatic_group : function(numismatic_group,container){
 
-		// wrapper
-			const catalog_row_wrapper = common.create_dom_element({
-				element_type	: "div",
-				class_name		: "children_contanier"
-			})
-			parent_node.appendChild( catalog_row_wrapper )
+		const people_numismatic_group = Object.keys(numismatic_group.people);
 
-		if(children){
-			for (let i = 0; i < children.length; i++) {
+			for (let index = 0; index < people_numismatic_group.length; index++) {
+				
+				const person_numismatic_group = people_numismatic_group[index];
+				const people_numismatic_group_div = common.create_dom_element({
+						element_type	: 'div',
+						class_name		: "people",
+						inner_html		: person_numismatic_group || "Sin grupo asociado",
+						parent			: container
+					})
 
-				const finded = self.parents.find(el => el.section_id == children[i])
+				people_numismatic_group_div.style.paddingLeft = '1.5em';
+				people_numismatic_group_div.style.color = '#2d8525';
+				const mints_person_numismatic_group = Object.keys(numismatic_group.people[person_numismatic_group].mints);
 
-				if(finded){
-					continue
+				people_numismatic_group_div.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const children = people_numismatic_group_div.querySelectorAll(":scope > .mint_div, :scope > .row_node");
+					children.forEach(child => {
+						child.style.display = child.style.display === "none" ? "block" : "none";
+					});
+				});
+
+				for (let j = 0; j < mints_person_numismatic_group.length; j++) {
+					const mint_person = mints_person_numismatic_group[j];
+					this.render_mints_numismatic_group(numismatic_group.people[person_numismatic_group].mints[mint_person],mint_person,people_numismatic_group_div);
 				}
 
-				self.get_child(ar_rows, children[i], catalog_row_wrapper)
+				for (let j = 0; j < numismatic_group.people[person_numismatic_group].no_mints.length; j++) {
+					
+					people_numismatic_group_div.appendChild(this.render_rows(numismatic_group.people[person_numismatic_group].no_mints[j],numismatic_group.people[person_numismatic_group].no_mints))
+					
+				}
+
 			}
-		}
+
+			const mints_no_people_numismatic_group = Object.keys(numismatic_group.no_people.mints);
+			for (let index = 0; index < mints_no_people_numismatic_group.length; index++) {
+					const mint = mints_no_people_numismatic_group[index];
+					this.render_mints_numismatic_group(numismatic_group.no_people.mints[mint],mint,container);
+				}
+
+			
+
+
 	},
 
-	get_child : function(ar_rows, section_id, parent_node){
+	render_mints_numismatic_group : function(types_mint,mint,container){
+		const mints_person_numismatic_group_div = common.create_dom_element({
+						element_type	: 'div',
+						class_name		: "mint_div",
+						inner_html		: mint || "Sin grupo asociado",
+						parent			: container
+					})
+		mints_person_numismatic_group_div.style.paddingLeft = '1.5em';
+		mints_person_numismatic_group_div.style.color = '#e2c832';
 
-		const self = this
+		mints_person_numismatic_group_div.addEventListener("click", (e) => {
+			e.stopPropagation();
+			if (e.target !== mints_person_numismatic_group_div) return;
+			const children = mints_person_numismatic_group_div.querySelectorAll(":scope > .row_node");
+					children.forEach(child => {
+						child.style.display = child.style.display === "none" ? "block" : "none";
+					});
 
-		const row_object 	= ar_rows.find(item => item.section_id==section_id)
+		});
 
-		if (row_object) {
-			const row_node 	= self.render_rows(row_object, ar_rows)
-			parent_node.appendChild( row_node )
-
-			if(row_object.children){
-				self.get_children(ar_rows, row_object, row_node)
-				row_node.addEventListener('mouseup', (event) => {
-					event.preventDefault()
-					const target = event.target.tagName === 'SPAN'
-						? event.target.parentNode
-						: event.target
-						// console.log("event.target:",event.target);
-					if (target === row_node.firstChild ){
-						const children_node = row_node.querySelector('.children_contanier')
-						children_node.classList.toggle("hide")
-					}
-
-				}, false);
-			}
+		for (let index = 0; index < types_mint.length; index++) {
+			mints_person_numismatic_group_div.appendChild(this.render_rows(types_mint[index],types_mint));
 		}
+
 	},
-
-
 
 	render_rows : function(row_object, ar_rows){
 
 		// Build dom row
 		// item row_object
 			// const row_object = ar_rows[i]
-
+		const self = this	
 			if(SHOW_DEBUG===true) {
 				// console.log("i row_object:", i, row_object);
 			}
 
 		// fix and set rows to catalog_row_fields
 			catalog_row_fields.ar_rows = ar_rows
-
+			catalog_row_fields.rows_painted = []
 		// catalog_row_fields set
-			const node = catalog_row_fields.draw_item(row_object)
+			//console.log("self.rows_list_container:",self.rows_list_container);
+			const node = catalog_row_fields.draw_item(row_object,self.rows_list_container)
 
 		return node
 	},
@@ -1849,7 +1813,141 @@ var catalog = {
 				resolve(data)
 			})
 		})
-	}//end get_catalog_range_years
+	},//end get_catalog_range_years
+
+	get_authors_from_find : function(array_people_data,structure_tree) {
+	
+		for (let index = 0; index < array_people_data.length; index++) {
+			
+			const author = this.get_author(array_people_data[index]);
+			const numismatic_group = JSON.parse(array_people_data[index].p_group)[0];
+
+			if(!(author in structure_tree[numismatic_group].people) && author != null){
+				//console.log("Creo a ",name_roles ," dentro del grupo numismatico con 2 o mas personas ", numismatic_group);
+
+				const people_base = {mints: {},
+									no_mints : []
+									}
+
+				structure_tree[numismatic_group].people[author] = people_base;
+			}
+
+		}
+		
+	},
+
+	get_author: function(type_data) {
+		let creators_data_parsed = null;
+
+		try {
+			creators_data_parsed = JSON.parse(type_data.ref_type_creators_data);
+		} catch (e) {
+			return null;
+		}
+
+		if (!creators_data_parsed || creators_data_parsed.length === 0) {
+			return null;
+		}
+
+		const roles_raw  = type_data.ref_type_creators_roles || "";
+		const names_raw  = type_data.ref_type_creators_names || "";
+		const creators_roles = roles_raw.split(" | ");
+		const creators_names = names_raw.split(" | ");
+
+		if (creators_data_parsed.length > 1) {
+			const index_author = creators_roles.findIndex(r => r && r.includes("Autoridad emisora"));
+			if (index_author >= 0 && creators_names[index_author]) {
+				return creators_names[index_author];
+			}
+
+			return null;
+		}
+
+		return creators_names[0] || null;
+	},
+
+	get_mints_from_find : function(types_parsed_data,structure_tree){
+
+		for (let index = 0; index < types_parsed_data.length; index++) {
+			
+			const author = this.get_author(types_parsed_data[index]);
+			const numismatic_group = JSON.parse(types_parsed_data[index].p_group)[0];
+			const p_mint = types_parsed_data[index].p_mint;
+			const mint_type = Array.isArray(p_mint) ? p_mint[0] : null;
+
+			if(author){
+				try {
+					if(!(mint_type in structure_tree[numismatic_group].people[author].mints) && mint_type != null){
+					structure_tree[numismatic_group].people[author].mints[mint_type] = [];
+					}
+				} catch (error) {
+					console.log(structure_tree[numismatic_group].people)
+				}
+				
+
+			}else{
+				if(mint_type){
+					structure_tree[numismatic_group].no_people.mints[mint_type] = [];
+				}
+				
+
+			}
+			
+		}
+
+	},
+
+	get_types_from_find : function(types_parsed_data, structure_tree) {
+
+		for (let index = 0; index < types_parsed_data.length; index++) {
+
+			const author = this.get_author(types_parsed_data[index]);
+			const numismatic_group = JSON.parse(types_parsed_data[index].p_group)[0];
+
+			const p_mint = types_parsed_data[index].p_mint;
+			const mint_type = Array.isArray(p_mint) && p_mint.length > 0 ? p_mint[0] : undefined;
+
+			if (author) {
+
+				if (!structure_tree[numismatic_group].people[author]) {
+					structure_tree[numismatic_group].people[author] = { mints: {}, no_mints: [] };
+				}
+
+				if (mint_type) {
+
+					if (!structure_tree[numismatic_group].people[author].mints[mint_type]) {
+						structure_tree[numismatic_group].people[author].mints[mint_type] = [];
+					}
+
+					structure_tree[numismatic_group].people[author].mints[mint_type].push(types_parsed_data[index]);
+
+				} else {
+
+					structure_tree[numismatic_group].people[author].no_mints.push(types_parsed_data[index]);
+
+				}
+
+			} else {
+
+				if (mint_type) {
+
+					if (!structure_tree[numismatic_group].no_people.mints[mint_type]) {
+						structure_tree[numismatic_group].no_people.mints[mint_type] = [];
+					}
+
+					structure_tree[numismatic_group].no_people.mints[mint_type].push(types_parsed_data[index]);
+
+				} else {
+
+					structure_tree[numismatic_group].no_people.no_mints.push(types_parsed_data[index]);
+
+				}
+
+			}
+
+		}
+	}
+
 
 
 

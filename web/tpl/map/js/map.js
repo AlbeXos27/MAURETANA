@@ -706,8 +706,8 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 								console.log(data_ceca.lat, data_ceca.lon);
 
 								if (data_ceca.lat != null && data_ceca.lon != null) {
-								data_ceca_lat += data_ceca.lat;
-								data_ceca_lon += data_ceca.lon;
+								data_ceca_lat += parseFloat(data_ceca.lat);
+								data_ceca_lon += parseFloat(data_ceca.lon);
 								}
 
 							}
@@ -1115,7 +1115,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 			const diameter = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "diameter",
-				text_content	: "Módulo: "+ coins[index].diameter +"mm" ,
+				text_content	: "Módulo: "+(coins[index].diameter != null ? (coins[index].diameter +"mm") : "N/A"),
 				parent			: container_data
 			})
 
@@ -1126,7 +1126,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 				parent			: container_data
 			})
 
-			let findspot_text = coins[index].findspot.split(" | ")[0]
+			let findspot_text = coins[index].findspot != null ? coins[index].findspot.split(" | ")[0] : "Sin información";
 			const findspot = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "findspot",
@@ -1137,7 +1137,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 			const tipo = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "type",
-				text_content	:  "Tipo: "+ coins[index].type_full_value,
+				text_content	:  "Tipo: "+ (coins[index].type_full_value != null ? coins[index].type_full_value : "Sin información"),
 				parent			: info_coin
 			})
 
@@ -1147,14 +1147,15 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 				parent			: info_coin
 			})
 
-			const type_link = common.create_dom_element({
-				element_type	: "a",
-				class_name		: "type_link",
-				href			: this.WEB_ROOT_WEB+"/type/"+ coins[index].type,
-				text_content	: "TIPO",
-				parent			: container_links
-			})
-			
+			if(coins[index].type_data != null){
+				const type_link = common.create_dom_element({
+					element_type	: "a",
+					class_name		: "type_link",
+					href			: this.WEB_ROOT_WEB+"/type/"+ JSON.parse(coins[index].type_data)[0],
+					text_content	: "TIPO",
+					parent			: container_links
+				})
+			}
 		}
 
 
@@ -1399,7 +1400,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 			const diameter = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "diameter",
-				text_content	: "Módulo: "+ coins[index].diameter +"mm" ,
+				text_content	: "Módulo: "+(coins[index].diameter != null ? (coins[index].diameter +"mm") : "N/A"),
 				parent			: container_data
 			})
 
@@ -1410,7 +1411,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 				parent			: container_data
 			})
 
-			let findspot_text = coins[index].findspot.split(" | ")[0]
+			let findspot_text = coins[index].findspot != null ? coins[index].findspot.split(" | ")[0] : "Sin información";
 			const findspot = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "findspot",
@@ -1421,7 +1422,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 			const tipo = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "type",
-				text_content	:  "Tipo: "+ coins[index].type_full_value,
+				text_content	:   "Tipo: "+ (coins[index].type_full_value != null ? coins[index].type_full_value : "Sin información"),
 				parent			: info_coin
 			})
 
@@ -1598,7 +1599,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 			const diameter = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "diameter",
-				text_content	: "Módulo: "+ coins[index].diameter +"mm" ,
+				text_content	: "Módulo: "+(coins[index].diameter != null ? (coins[index].diameter +"mm") : "N/A"),
 				parent			: container_data
 			})
 
@@ -1609,7 +1610,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 				parent			: container_data
 			})
 
-			let findspot_text = coins[index].findspot.split(" | ")[0]
+			let findspot_text = coins[index].findspot != null ? coins[index].findspot.split(" | ")[0] : "Sin información";
 			const findspot = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "findspot",
@@ -1620,7 +1621,7 @@ cargarTodoYCrearMapa : async function(resultado,sql_filter,location) {
 			const tipo = common.create_dom_element({
 				element_type	: "span",
 				class_name		: "type",
-				text_content	:  "Tipo: "+ coins[index].type_full_value,
+				text_content	:   "Tipo: "+ (coins[index].type_full_value != null ? coins[index].type_full_value : "Sin información"),
 				parent			: info_coin
 			})
 

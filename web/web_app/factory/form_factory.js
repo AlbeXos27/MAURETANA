@@ -677,6 +677,8 @@ function form_factory() {
 
 					const item = ar_query[i]
 					const item_op = Object.keys(item)[0]
+					
+
 					if(item_op==="$and" || item_op==="$or") {
 
 						// recursion
@@ -709,11 +711,12 @@ function form_factory() {
 						filter_line = (item_field.indexOf("AS")!==-1 || item_field.indexOf("CONCAT")!==-1 || (item.wrapper && item.wrapper.length>0))
 							? "(" +item_field+""  +" "+ item.op +" "+ item.value + (" AND "+item_field+"!='')")
 							: "(`"+item_field+"`" +" "+ item.op +" "+ item.value	+ (" AND `"+item_field+"`!='')")
+
 					}
 					if(item_field == "term"){
 							filter_line += ` AND term_section_label LIKE '%Grupo numismático%' AND parent LIKE  '["21057"]'`;
 					}
-
+					
 					if(global_search){
 						filter_line = "(" + filter_line;
 						filter_line += ` OR parents_text LIKE ${item.value})`;
@@ -722,7 +725,9 @@ function form_factory() {
 					if(item_table == "findspots" ){
 						filter_line += ` AND typology != '' `;
 					}
-					console.log("filter_line ",filter_line)
+
+
+					filter_line += " AND lang = 'lg-spa'"
 					ar_filter.push(filter_line)
 
 					// group
@@ -867,6 +872,7 @@ function form_factory() {
 	const parent_in = options.parent_in || false;
 	const global_search = options.global_search || false;
 	const activate_filter = options.activate_filter === false ? false : true;
+	const value_splittable = options.value_splittable === true ? true : false;
 	const parse_result = options.parse_result || function(ar_result, term) {
 		return ar_result.map(function(item){
 			item.label = item.label.replace(/<br>/g," ");
@@ -918,7 +924,7 @@ function form_factory() {
 			}
 		});
 	})(jQuery);
-		
+	
 	const cache = {};
 	$(form_item.node_input).autocomplete({
 		delay: 150,
@@ -934,6 +940,7 @@ function form_factory() {
 			}
 
 			const field = form_item.q_name;
+
 			const q_column = form_item.q_column;
 			const q_column_group = form_item.q_column_group || q_column;
 
@@ -941,9 +948,10 @@ function form_factory() {
 			const filterObj = {};
 			filterObj[op] = [];
 
+			console.log("filterObj", filterObj)
+
 			const value_parsed = (form_item.eq_in) + term + (form_item.eq_out);
 			const safe_value = typeof value_parsed === 'string' ? value_parsed.replace(/(')/g, "''") : value_parsed;
-
 			filterObj[op].push({
 				field: form_item.q_column_filter || q_column,
 				value: `'${safe_value}'`,
@@ -975,7 +983,7 @@ function form_factory() {
 							const safe_value2 = typeof value === 'string' ? value.replace(/(')/g, "''") : value;
 							c_filter[c_op].push({
 								field: current_form_item.q_column,
-								value: (current_form_item.is_term === true) ? `'%"${safe_value2}"%'` : `'${safe_value2}'`,
+								value: (current_form_item.is_term === true) ? `'%${safe_value2}%'` : `'${safe_value2}'`,
 								op: (current_form_item.is_term === true) ? "LIKE" : "=",
 								sql_filter: current_form_item.sql_filter,
 								wrapper: current_form_item.wrapper
@@ -989,11 +997,6 @@ function form_factory() {
 				}
 			}
 
-
-			if (filterObj[op].length === 1 && term in cache && pagData.currentPage === 1) {
-				response(cache[term]);
-				return;
-			}
 
 			const sql_filter = self.parse_sql_filter(filterObj, self.group, activate_filter, global_search, table);
 			const table_resolved = typeof table === "function" ? table() : table;
@@ -1019,21 +1022,22 @@ function form_factory() {
 					section_id = api_response.result[0].section_id;
 				});
 			}
-
+			const ar_result = [];
+			
 			await data_manager.request({
 				body: {
 					dedalo_get: 'records',
 					table: table_resolved,
 					lang: lang,
 					ar_fields: [plain_field + " AS name", (table_resolved === "findspots" || table_resolved === "catalog") ? "parents_text" : "section_id"],
-					sql_filter: !id ? sql_filter : `parent LIKE  '["${section_id}"]'`,
+					sql_filter: !id ? sql_filter  + (table_resolved == "findspots" ? " AND coins != ''" : "") : `parent LIKE  '["${section_id}"]'`,
 					group: plain_field,
-					limit: 20,
-					offset: (pagData.currentPage - 1) * 20,
+					limit: 0,
+					offset : (pagData.currentPage - 1) * 20,
 					order: order
 				}
 			}).then((api_response) => {
-				const ar_result = [];
+				console.log("form_factory macaco",sql_filter)
 				const len = api_response.result.length;
 
 				if (pagData.currentPage > 1) {
@@ -1067,25 +1071,98 @@ function form_factory() {
 							} catch(e) { extra_label = " | " + item.parents_text; }
 						}
 
-						if (!ar_result.find(el => el.value === item_name)) {
-							ar_result.push({ label: `${item_name}${extra_label}`, value: item_name });
+						if(value_splittable){
+
+							const splittable_values = item_name.split("|");
+
+							splittable_values.forEach(splittable_value => {
+
+								const clean_value = splittable_value.trim();
+								const split_value = clean_value.split(',');
+								if(split_value.length > 1){
+
+									split_value.forEach(splitted_values => {
+
+										const clean_value_splitted = splitted_values.trim();
+										if(!clean_value_splitted.includes("Digitali")){
+
+											if (!ar_result.find(el => el.label.includes(clean_value_splitted) )) {
+												ar_result.push({ label: clean_value_splitted, value: clean_value_splitted });
+											}
+
+										}	
+
+									})
+
+								}else{
+
+									if (!ar_result.find(el => el.label.includes(clean_value))) {
+										ar_result.push({ label: clean_value, value: clean_value });
+									}
+
+								}
+
+								
+							})
+
+						}else{
+
+							if (!ar_result.find(el => el.value === item_name)) {
+								ar_result.push({ label: `${item_name}${extra_label}`, value: item_name });
+							}
+
+
 						}
+						
+						
 					}
 				}
 
-				if (len === 20) {
-					ar_result.push({
+				let ar_result_final = parse_result(ar_result, term);
+				const results_per_page = 20;
+				let has_next_page = false;
+				const offset = (pagData.currentPage - 1) * 20;
+				let items_only = ar_result_final.filter(item => item.value !== '__prev__');
+
+
+				if ((pagData.currentPage)*20 <= items_only.length) {
+					has_next_page = true;
+				}
+
+				let final_results = items_only.slice(offset, results_per_page + offset);
+				
+				const safe_value_final= safe_value.replace(/%/g, '')
+				if(safe_value_final != ''){
+					final_results = items_only.filter(item => normalize(item.label).includes(safe_value_final.trim()));
+				}
+
+				//console.log("final_results ",final_results)
+
+				// 4. Reinsertar los botones de navegación
+				if (pagData.currentPage > 1) {
+					// Reinsertar el botón "Anterior" si corresponde
+					final_results.unshift({
+						label: "<div class='ac-nav-btn'>&laquo; Página anterior</div>",
+						value: "__prev__"
+					});
+				}
+
+				if (has_next_page) {
+					// Añadir el botón "Siguiente"
+					final_results.push({
 						label: "<div class='ac-nav-btn'>Página siguiente &raquo;</div>",
 						value: "__next__"
 					});
 				}
 
-				const ar_result_final = parse_result(ar_result, term);
+				// 5. Lógica de Caché (CORREGIDA para incluir botones)
 				if (filterObj[op].length === 1 && typeof table !== "function" && pagData.currentPage === 1) {
-					cache[term] = ar_result_final;
+					// Cacheamos el resultado final CON botones para la página 1
+					cache[term] = final_results; 
 				}
 
-				response(ar_result_final);
+				// 6. Responder
+				response(final_results);
 			});
 		},
 		select: function(event, ui) {
@@ -1098,7 +1175,6 @@ function form_factory() {
 				return false;
 			}
 			if (ui.item.value === "__prev__") {
-				// 🔹 Evitar que currentPage baje de 1
 				pagData.currentPage = Math.max(1, pagData.currentPage - 1);
 				setTimeout(() => $(form_item.node_input).focus().autocomplete('search', pagData.lastTerm), 0);
 				return false;
@@ -1124,7 +1200,12 @@ function form_factory() {
 
 	//end activate_autocomplete
 
-
+function normalize(str) {
+  return str
+    .normalize('NFD')                // separa letras y acentos
+    .replace(/[\u0300-\u036f]/g, '') // elimina los acentos
+    .toLowerCase();                  // pasa a minúsculas
+}
 
 		/**
 		* FORM_TO_SQL_FILTER (DEPRECATED!)

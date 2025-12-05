@@ -2,7 +2,7 @@
 
 <h3>CONTRIBUTORS</h3>
 
-<p>TED2021-131704A-I00, financiado por MCIN/AEI/10.13039/501100011033 y por la Unión Europea “NextGenerationEU”/PRTR</p>
+<p>CNS2022 – 135815, financiado por MCIN/AEI/10.13039/501100011033 y por la Unión Europea “NextGenerationEU”/PRTR</p>
 
 <img src='https://raw.githubusercontent.com/hispanicode/tool_leaflet_special_tools/main/contributors/image.png' width='446'>
 
